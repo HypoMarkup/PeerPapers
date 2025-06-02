@@ -1,8 +1,8 @@
-import { useContext} from "react"
-import { WebsocketContext, type WebSocketInterface } from "./WebsocketProvider"
+import { useContext, useState } from "react";
+import { WebsocketContext, type WebSocketInterface } from "./WebsocketProvider";
 
 function App() {
-  // const [form, setForm] = useState("");
+  const [form, setForm] = useState<string>("");
 
   const ws: WebSocketInterface = useContext(WebsocketContext);
 
@@ -11,10 +11,21 @@ function App() {
 
   return (
     <>
+      <input type="text" onChange={(e) => setForm(e.target.value)} />
+      <button
+        onClick={() => {
+          if (ws.send != undefined) {
+            ws.send(form);
+            setForm("");
+          }
+        }}
+      >
+        Submit
+      </button>
       <p>Status: {isReady}</p>
       <p>Data: {output}</p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
