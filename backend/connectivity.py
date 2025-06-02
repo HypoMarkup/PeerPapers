@@ -1,0 +1,61 @@
+from abc import ABC, abstractmethod
+from types import CoroutineType
+from typing import Coroutine, Any, Iterable
+from fastapi import WebSocket
+
+class CommunicationMedium(ABC):
+    @abstractmethod
+    def accept(
+        self,
+        subprotocol: str | None = None,
+        headers: Iterable[tuple[bytes, bytes]] | None = None,
+    ) -> CoroutineType[Any, Any, None]:
+        pass
+
+    @abstractmethod
+    def send_text(self, data: str) -> Coroutine[Any, Any, None]:
+        pass
+
+    @abstractmethod
+    def receive_text(self) -> Coroutine[Any, Any, str]:
+        pass
+
+
+class WebsocketMedium(CommunicationMedium):
+    def __init__(self, ws: WebSocket):
+        self.__ws: WebSocket = ws
+
+    def accept(
+        self,
+        subprotocol: str | None = None,
+        headers: Iterable[tuple[bytes, bytes]] | None = None,
+    ) -> CoroutineType[Any, Any, None]:
+        return self.__ws.accept()
+
+    def send_text(self, data: str) -> Coroutine[Any, Any, None]:
+        return self.__ws.send_text(data)
+
+    def receive_text(self) -> Coroutine[Any, Any, str]:
+        return self.__ws.receive_text()
+
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[CommunicationMedium] = []
+
+    async def connect(self, c: CommunicationMedium):
+        await c.accept()
+        self.active_connections.append(c)
+
+    def disconnect(self, c: CommunicationMedium):
+        self.active_connections.remove(c)
+
+    async def send_personal_message(self, message: str, c: CommunicationMedium):
+        await c.send_text(message)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            await connection.send_text(message)
+
+    def getID(self, c: CommunicationMedium):
+        return self.active_connections.index(c)
