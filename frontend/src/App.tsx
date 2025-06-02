@@ -1,14 +1,18 @@
-import { useContext } from "react"
+import { useContext} from "react"
 import { WebsocketContext, type WebSocketInterface } from "./WebsocketProvider"
 
 function App() {
-  const wsData: WebSocketInterface = useContext(WebsocketContext);
+  // const [form, setForm] = useState("");
 
-  const output = wsData.isReady ? "Ready"  : "Not ready";
+  const ws: WebSocketInterface = useContext(WebsocketContext);
+
+  const isReady = ws.isReady ? "Ready" : "Not ready";
+  const output = ws.value != null ? ws.value : "";
 
   return (
     <>
-      {output}
+      <p>Status: {isReady}</p>
+      <p>Data: {output}</p>
     </>
   )
 }
