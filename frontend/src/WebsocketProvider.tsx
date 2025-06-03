@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect, createContext } from "react";
 import type { ReactNode } from "react";
-import type { IncomingMessage, OutgoingMessage } from "./message";
+import type {
+  IncomingMessage,
+  OutgoingMessage,
+  CheckUUIDMessage,
+} from "./message";
 import { isAssignUUIDMessage, isIncomingMessage } from "./message.guard";
 
 // Source:
@@ -25,12 +29,11 @@ export const WebsocketContext = createContext<WebSocketInterface>({
 type iProps = { children?: ReactNode };
 
 export const WebsocketProvider = (props: iProps) => {
+  // Ready
   const [isReady, setIsReady] = useState(false);
-  const [rawData, setRawData] = useState<String>();
 
   const [msg, setMsg] = useState<IncomingMessage | null>(null);
   const [uuid, setUUID] = useState<string>("");
-  const [handshakeComplete, setHandshakeComplete] = useState(false);
 
   const ws = useRef<WebSocket>(null);
 
@@ -40,22 +43,31 @@ export const WebsocketProvider = (props: iProps) => {
     const socket = new WebSocket("ws://127.0.0.1:8000/ws");
 
     socket.onopen = () => {
-      if (!handshakeComplete) {
-        const msg: OutgoingMessage = {
+      if (
+        localStorage["uuid"] === undefined ||
+        localStorage["uuid"].length === 0
+      ) {
+        // If no uuid exists in localstorage, request a uuid
+        const handshakeMsg: OutgoingMessage = {
           type: "acquireUUID",
         };
-        ws.current?.send(JSON.stringify(msg));
+        ws.current?.send(JSON.stringify(handshakeMsg));
+      } else {
+        // If a uuid exists in memory, check it
+        const handshakeMsg: CheckUUIDMessage = {
+          type: "checkUUID",
+          uuid: localStorage["uuid"],
+        };
+        ws.current?.send(JSON.stringify(handshakeMsg));
       }
-      setIsReady(true);
     };
     socket.onclose = () => setIsReady(false);
     socket.onmessage = (event) => {
-      setRawData(event.data);
-
-      // Add validation at some point (instance of IngoingMessage check)
       const m = JSON.parse(event.data);
       if (isIncomingMessage(m)) {
         setMsg(m);
+      } else {
+        console.error("Invalid message: " + event.data);
       }
     };
 
@@ -67,18 +79,19 @@ export const WebsocketProvider = (props: iProps) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (handshakeComplete) {
-      setIsReady(true);
-    }
-  }, [handshakeComplete]);
-
-  console.log(msg);
-
-  if (!handshakeComplete && isReady && msg !== null) {
+  if (!isReady && msg !== null) {
     if (isAssignUUIDMessage(msg)) {
       setUUID(msg.uuid);
-      setHandshakeComplete(true);
+      setIsReady(true);
+      localStorage["uuid"] = msg.uuid;
+    } else if (isIncomingMessage(msg)) {
+      if (msg.type == "validUUID") {
+        setUUID(localStorage["uuid"]);
+        setIsReady(true);
+      } else if (msg.type == "invalidUUID") {
+        localStorage.clear();
+        location.reload();
+      }
     } else {
       console.error("Expected UUID handshake");
     }

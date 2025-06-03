@@ -9,7 +9,7 @@ export interface OutgoingMessage {
   type: "acquireUUID" | "checkUUID";
 }
 
-export interface checkUUIDMessage extends OutgoingMessage {
+export interface CheckUUIDMessage extends OutgoingMessage {
   type: "checkUUID";
   uuid: string;
 }
