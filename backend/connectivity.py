@@ -3,6 +3,7 @@ from types import CoroutineType
 from typing import Coroutine, Any, Iterable
 from fastapi import WebSocket
 
+
 class CommunicationMedium(ABC):
     @abstractmethod
     def accept(
@@ -50,12 +51,9 @@ class ConnectionManager:
     def disconnect(self, c: CommunicationMedium):
         self.active_connections.remove(c)
 
-    async def send_personal_message(self, message: str, c: CommunicationMedium):
+    async def send_personal_message(self, c: CommunicationMedium, message: str):
         await c.send_text(message)
 
     async def broadcast(self, message: str):
         for connection in self.active_connections:
             await connection.send_text(message)
-
-    def getID(self, c: CommunicationMedium):
-        return self.active_connections.index(c)

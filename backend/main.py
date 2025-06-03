@@ -1,18 +1,15 @@
-# import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from connectivity import ConnectionManager, WebsocketMedium
+from player import Player
+from message import IncomingMessage, AssignUUIDMessage
+from pydantic import ValidationError
 
 app = FastAPI()
 
 manager = ConnectionManager()
 
-# async def main_loop():
-#     while True:
-#         print("Running main logic loop...")
-#         # do checks here
-
-#         # we fs need this for timer
-#         await asyncio.sleep(1)
+# TODO: Build Player manager or some sort
+players: list[Player] = []
 
 
 @app.websocket("/ws")
@@ -22,10 +19,16 @@ async def websocket_endpoint(ws: WebSocket):
     try:
         while True:
             data = await c.receive_text()
-            await manager.broadcast(f"Client {manager.getID(c)} says: {data}")
-    except WebSocketDisconnect:
+            incoming_msg = IncomingMessage.model_validate_json(data)
+            if incoming_msg.type == "acquireUUID":
+                p = Player(c)
+                players.append(p)
+                outgoing_msg = AssignUUIDMessage(type="assignUUID", uuid=p.uuid)
+                await manager.send_personal_message(c, outgoing_msg.model_dump_json())
+            # await manager.broadcast(f"Client says: {data}")
+    except (WebSocketDisconnect, ValidationError):
         manager.disconnect(c)
-        await manager.broadcast(f"Client {manager.getID(c)} left the chat")
+        # await manager.broadcast(f"Client left the chat")
 
 
 @app.get("/")
