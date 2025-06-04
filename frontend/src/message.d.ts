@@ -28,3 +28,10 @@ export interface UUIDAssignmentMessage extends IncomingMessage {
   type: "uuid-assignment";
   uuid: string;
 }
+
+/** @see {isFailedReconnectionMessage} ts-auto-guard:type-guard */
+export interface FailedReconnectionMessage extends IncomingMessage {
+  type: "failed-reconnect";
+  reason: "invalid-uuid" | "server-full";
+  shouldReset: boolean;
+}

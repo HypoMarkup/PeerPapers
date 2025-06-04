@@ -5,7 +5,11 @@ import type {
   OutgoingMessage,
   ReconnectMessage,
 } from "./message";
-import { isUUIDAssignmentMessage, isIncomingMessage } from "./message.guard";
+import {
+  isUUIDAssignmentMessage,
+  isIncomingMessage,
+  isFailedReconnectionMessage,
+} from "./message.guard";
 
 // Source:
 // https://ably.com/blog/websockets-react-tutorial
@@ -98,8 +102,12 @@ export const WebsocketProvider = (props: iProps) => {
       if (msg.type == "successful-reconnect") {
         setUUID(localStorage["uuid"]);
         setIsReady(true);
-      } else if (msg.type == "failed-reconnect") {
-        resetClient();
+      } else if (isFailedReconnectionMessage(msg)) {
+        // Todo: Display UI depending on message, if reset isn't suggested, if lobby is full ui should indicate
+        console.error(msg);
+        if (msg.shouldReset) {
+          resetClient();
+        }
       }
     } else {
       console.error("Expected UUID handshake");

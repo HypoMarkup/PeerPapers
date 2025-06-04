@@ -1,9 +1,11 @@
 from asyncio import create_task, sleep, CancelledError
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from game_state import GameState
 from connectivity import ConnectionManager, WebsocketMedium
 from player import Player, PlayerManager
 from message import (
+    FailedReconnectionMessage,
     ReconnectMessage,
     IncomingMessage,
     UUIDAssignmentMessage,
@@ -14,6 +16,8 @@ from pydantic import ValidationError
 
 connection_manager = ConnectionManager()
 player_manager = PlayerManager()
+
+state: GameState = GameState.Lobby
 
 
 async def glorious_main_loop():
@@ -65,7 +69,11 @@ async def websocket_endpoint(ws: WebSocket):
                         c, outgoing_msg.model_dump_json()
                     )
                 else:
-                    outgoing_msg = OutgoingMessage(type="failed-reconnect")
+                    outgoing_msg = FailedReconnectionMessage(
+                        type="failed-reconnect",
+                        reason="invalid-uuid",
+                        shouldReset=(state == GameState.Lobby),
+                    )
                     await connection_manager.send_personal_message(
                         c, outgoing_msg.model_dump_json()
                     )

@@ -22,3 +22,9 @@ class OutgoingMessage(BaseModel):
 class UUIDAssignmentMessage(BaseModel):
     type: Literal["uuid-assignment"]
     uuid: str
+
+
+class FailedReconnectionMessage(BaseModel):
+    type: Literal["failed-reconnect"]
+    reason: Literal["invalid-uuid", "server-full"]
+    shouldReset: bool
