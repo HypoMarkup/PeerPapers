@@ -1,3 +1,5 @@
+from asyncio import create_task, sleep, CancelledError
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from connectivity import ConnectionManager, WebsocketMedium
 from player import Player, PlayerManager
@@ -9,10 +11,30 @@ from message import (
 )
 from pydantic import ValidationError
 
-app = FastAPI()
 
 connection_manager = ConnectionManager()
 player_manager = PlayerManager()
+
+
+async def glorious_main_loop():
+    while True:
+        # All game logic goes here
+        await sleep(5)
+        print("hi")
+
+
+@asynccontextmanager
+async def start_main_loop(app: FastAPI):
+    task = create_task(glorious_main_loop())
+    yield
+    task.cancel()
+    try:
+        await task
+    except CancelledError:
+        pass
+
+
+app = FastAPI(lifespan=start_main_loop)
 
 
 @app.websocket("/ws")
@@ -46,7 +68,6 @@ async def websocket_endpoint(ws: WebSocket):
     except (WebSocketDisconnect, ValidationError):
         connection_manager.disconnect(c)
         print(player_manager.players)
-        # await manager.broadcast(f"Client left the chat")
 
 
 @app.get("/")
