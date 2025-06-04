@@ -2,24 +2,26 @@
  * Generated type guards for "message.d.ts".
  * WARNING: Do not manually change this file.
  */
-import type { IncomingMessage, AssignUUIDMessage } from "./message";
+import type { IncomingMessage, UUIDAssignmentMessage } from "./message";
 
 export function isIncomingMessage(obj: unknown): obj is IncomingMessage {
   const typedObj = obj as IncomingMessage;
   return (
     ((typedObj !== null && typeof typedObj === "object") ||
       typeof typedObj === "function") &&
-    (typedObj["type"] === "assignUUID" ||
-      typedObj["type"] === "validUUID" ||
-      typedObj["type"] === "invalidUUID")
+    (typedObj["type"] === "uuid-assignment" ||
+      typedObj["type"] === "successful-reconnect" ||
+      typedObj["type"] === "failed-reconnect")
   );
 }
 
-export function isAssignUUIDMessage(obj: unknown): obj is AssignUUIDMessage {
-  const typedObj = obj as AssignUUIDMessage;
+export function isUUIDAssignmentMessage(
+  obj: unknown
+): obj is UUIDAssignmentMessage {
+  const typedObj = obj as UUIDAssignmentMessage;
   return (
     (isIncomingMessage(typedObj) as boolean) &&
-    typedObj["type"] === "assignUUID" &&
+    typedObj["type"] === "uuid-assignment" &&
     typeof typedObj["uuid"] === "string"
   );
 }

@@ -3,18 +3,22 @@ from typing import Literal
 
 
 class IncomingMessage(BaseModel):
-    type: Literal["acquireUUID", "checkUUID"]
+    type: Literal["initial-connect", "reconnect"]
 
 
-class CheckUUIDMessage(BaseModel):
-    type: Literal["checkUUID"]
+class InitialConnectMessage(BaseModel):
+    type: Literal["initial-connect"]
+
+
+class ReconnectMessage(BaseModel):
+    type: Literal["reconnect"]
     uuid: str
 
 
 class OutgoingMessage(BaseModel):
-    type: Literal["assignUUID", "validUUID", "invalidUUID"]
+    type: Literal["uuid-assignment", "successful-reconnect", "failed-reconnect"]
 
 
-class AssignUUIDMessage(BaseModel):
-    type: Literal["assignUUID"]
+class UUIDAssignmentMessage(BaseModel):
+    type: Literal["uuid-assignment"]
     uuid: str

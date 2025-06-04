@@ -4,9 +4,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from connectivity import ConnectionManager, WebsocketMedium
 from player import Player, PlayerManager
 from message import (
-    CheckUUIDMessage,
+    ReconnectMessage,
     IncomingMessage,
-    AssignUUIDMessage,
+    UUIDAssignmentMessage,
     OutgoingMessage,
 )
 from pydantic import ValidationError
@@ -42,28 +42,34 @@ async def websocket_endpoint(ws: WebSocket):
     c = WebsocketMedium(ws)
     await connection_manager.connect(c)
     try:
+        p = None
         while True:
             print(player_manager.players)
             data = await c.receive_text()
             incoming_msg = IncomingMessage.model_validate_json(data)
-            if incoming_msg.type == "acquireUUID":
+            if incoming_msg.type == "initial-connect":
                 p = Player(c)
                 player_manager.add_player(p)
-                outgoing_msg = AssignUUIDMessage(type="assignUUID", uuid=p.uuid)
+                outgoing_msg = UUIDAssignmentMessage(
+                    type="uuid-assignment", uuid=p.uuid
+                )
                 await connection_manager.send_personal_message(
                     c, outgoing_msg.model_dump_json()
                 )
-            elif incoming_msg.type == "checkUUID":
-                incoming_msg = CheckUUIDMessage.model_validate_json(data)
-                if player_manager.reconnect_player_via_UUID(incoming_msg.uuid, c):
-                    outgoing_msg = OutgoingMessage(type="validUUID")
+            elif incoming_msg.type == "reconnect":
+                incoming_msg = ReconnectMessage.model_validate_json(data)
+                p = player_manager.reconnect_player_via_UUID(incoming_msg.uuid, c)
+                if p is not None:
+                    outgoing_msg = OutgoingMessage(type="successful-reconnect")
+                    await connection_manager.send_personal_message(
+                        c, outgoing_msg.model_dump_json()
+                    )
                 else:
-                    outgoing_msg = OutgoingMessage(type="invalidUUID")
-                await connection_manager.send_personal_message(
-                    c, outgoing_msg.model_dump_json()
-                )
-
-                pass
+                    outgoing_msg = OutgoingMessage(type="failed-reconnect")
+                    await connection_manager.send_personal_message(
+                        c, outgoing_msg.model_dump_json()
+                    )
+                    raise WebSocketDisconnect(code=1003, reason="Invalid UUID")
 
     except (WebSocketDisconnect, ValidationError):
         connection_manager.disconnect(c)

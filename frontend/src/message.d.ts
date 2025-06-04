@@ -6,11 +6,11 @@
 //
 
 export interface OutgoingMessage {
-  type: "acquireUUID" | "checkUUID";
+  type: "initial-connect" | "reconnect";
 }
 
-export interface CheckUUIDMessage extends OutgoingMessage {
-  type: "checkUUID";
+export interface ReconnectMessage extends OutgoingMessage {
+  type: "reconnect";
   uuid: string;
 }
 
@@ -20,11 +20,11 @@ export interface CheckUUIDMessage extends OutgoingMessage {
 
 /** @see {isIncomingMessage} ts-auto-guard:type-guard */
 export interface IncomingMessage {
-  type: "assignUUID" | "validUUID" | "invalidUUID";
+  type: "uuid-assignment" | "successful-reconnect" | "failed-reconnect";
 }
 
-/** @see {isAssignUUIDMessage} ts-auto-guard:type-guard */
-export interface AssignUUIDMessage extends IncomingMessage {
-  type: "assignUUID";
+/** @see {isUUIDAssignmentMessage} ts-auto-guard:type-guard */
+export interface UUIDAssignmentMessage extends IncomingMessage {
+  type: "uuid-assignment";
   uuid: string;
 }

@@ -3,12 +3,21 @@ import type { ReactNode } from "react";
 import type {
   IncomingMessage,
   OutgoingMessage,
-  CheckUUIDMessage,
+  ReconnectMessage,
 } from "./message";
-import { isAssignUUIDMessage, isIncomingMessage } from "./message.guard";
+import { isUUIDAssignmentMessage, isIncomingMessage } from "./message.guard";
 
 // Source:
 // https://ably.com/blog/websockets-react-tutorial
+
+function isLocalStorageEmpty(key: string): boolean {
+  return localStorage[key] === undefined || localStorage[key].length === 0;
+}
+
+function resetClient() {
+  localStorage.clear();
+  location.reload();
+}
 
 export interface WebSocketInterface {
   isReady: boolean;
@@ -33,6 +42,8 @@ export const WebsocketProvider = (props: iProps) => {
   const [isReady, setIsReady] = useState(false);
 
   const [msg, setMsg] = useState<IncomingMessage | null>(null);
+
+  // TODO: Add checks on entered name to prevent empty names and other
   const [uuid, setUUID] = useState<string>("");
 
   const ws = useRef<WebSocket>(null);
@@ -43,22 +54,21 @@ export const WebsocketProvider = (props: iProps) => {
     const socket = new WebSocket("ws://127.0.0.1:8000/ws");
 
     socket.onopen = () => {
-      if (
-        localStorage["uuid"] === undefined ||
-        localStorage["uuid"].length === 0
-      ) {
-        // If no uuid exists in localstorage, request a uuid
+      if (isLocalStorageEmpty("uuid")) {
+        // If no uuid exists in localstorage, fresh connection
         const handshakeMsg: OutgoingMessage = {
-          type: "acquireUUID",
+          type: "initial-connect",
         };
         ws.current?.send(JSON.stringify(handshakeMsg));
-      } else {
-        // If a uuid exists in memory, check it
-        const handshakeMsg: CheckUUIDMessage = {
-          type: "checkUUID",
+      } else if (!isLocalStorageEmpty("uuid")) {
+        // If a uuid exists in memory, attempt to reconnect
+        const handshakeMsg: ReconnectMessage = {
+          type: "reconnect",
           uuid: localStorage["uuid"],
         };
         ws.current?.send(JSON.stringify(handshakeMsg));
+      } else {
+        resetClient();
       }
     };
     socket.onclose = () => setIsReady(false);
@@ -80,17 +90,16 @@ export const WebsocketProvider = (props: iProps) => {
   }, []);
 
   if (!isReady && msg !== null) {
-    if (isAssignUUIDMessage(msg)) {
+    if (isUUIDAssignmentMessage(msg)) {
       setUUID(msg.uuid);
       setIsReady(true);
       localStorage["uuid"] = msg.uuid;
     } else if (isIncomingMessage(msg)) {
-      if (msg.type == "validUUID") {
+      if (msg.type == "successful-reconnect") {
         setUUID(localStorage["uuid"]);
         setIsReady(true);
-      } else if (msg.type == "invalidUUID") {
-        localStorage.clear();
-        location.reload();
+      } else if (msg.type == "failed-reconnect") {
+        resetClient();
       }
     } else {
       console.error("Expected UUID handshake");

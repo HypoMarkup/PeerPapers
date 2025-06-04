@@ -35,13 +35,15 @@ class PlayerManager:
     def add_player(self, p: Player):
         self.players.append(p)
 
-    def reconnect_player_via_UUID(self, uuid: str, c: CommunicationMedium) -> bool:
+    def reconnect_player_via_UUID(
+        self, uuid: str, c: CommunicationMedium
+    ) -> Player | None:
         for p in self.players:
             if p.uuid == uuid:
                 if not p.is_connected():
                     p.set_sock(c)
-                    return True
+                    return p
                 else:
                     # TODO: Handle this
                     print("Player is already connected")
-        return False
+        return None
