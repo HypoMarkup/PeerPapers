@@ -1,6 +1,8 @@
+# magic that adds: str | None  =====  Union[str, None], for pre python 3.10
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from types import CoroutineType
-from typing import Coroutine, Any, Iterable
+from typing import Coroutine, Any, Iterable, Optional
 from fastapi import WebSocket
 
 
@@ -8,7 +10,7 @@ class CommunicationMedium(ABC):
     @abstractmethod
     def accept(
         self,
-        subprotocol: str | None = None,
+        subprotocol: Optional[str] = None,
         headers: Iterable[tuple[bytes, bytes]] | None = None,
     ) -> CoroutineType[Any, Any, None]:
         pass
@@ -28,7 +30,7 @@ class WebsocketMedium(CommunicationMedium):
 
     def accept(
         self,
-        subprotocol: str | None = None,
+        subprotocol: Optional[str] = None,
         headers: Iterable[tuple[bytes, bytes]] | None = None,
     ) -> CoroutineType[Any, Any, None]:
         return self.__ws.accept()

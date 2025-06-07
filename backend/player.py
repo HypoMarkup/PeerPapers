@@ -1,6 +1,7 @@
 import uuid
 from connectivity import CommunicationMedium
 from weakref import ref, ReferenceType
+from typing import Optional
 
 weakSock = ReferenceType[CommunicationMedium]
 
@@ -25,7 +26,6 @@ class Player:
 
     def __repr__(self) -> str:
         return f"{self.uuid} {self.sock()}"
-        pass
 
 
 class PlayerManager:
@@ -37,7 +37,7 @@ class PlayerManager:
 
     def reconnect_player_via_UUID(
         self, uuid: str, c: CommunicationMedium
-    ) -> Player | None:
+    ) -> Optional[Player]:
         for p in self.players:
             if p.uuid == uuid:
                 if not p.is_connected():
