@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ClientReconnectMessage",
+  "type": "object",
+  "properties": {
+    "type": {
+        "type": "string",
+        "const": "reconnect"
+    },
+    "uuid": {
+        "type": "string",
+        "format": "uuid"
+    }
+  },
+  "required": ["type", "uuid"],
+  "additionalProperties": false
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ClientMessage",
+  "type": "object",
+  "properties": {
+    "type": {
+        "type": "string",
+        "enum": ["initial-connect","reconnect"]
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false
+}

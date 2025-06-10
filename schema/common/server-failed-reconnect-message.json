@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ServerFailedReconnectMessage",
+  "type": "object",
+  "properties": {
+    "type": {
+        "type": "string",
+        "const": "failed-reconnect"
+    },
+    "reason": {
+      "type": "string",
+      "enum": ["invalid-uuid","server-full"]
+    },
+    "shouldReset": {
+      "type": "boolean"
+    }
+  },
+  "required": ["type", "reason", "shouldReset"],
+  "additionalProperties": false
+}
