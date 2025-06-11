@@ -1,13 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ClientMessage",
+  "title": "ServerUUIDAssignmentMessage",
   "type": "object",
   "properties": {
     "type": {
         "type": "string",
-        "enum": ["initial-connect","reconnect"]
+        "const": "uuid assignment"
+    },
+    "uuid": {
+        "type": "string",
+        "format": "uuid"
     }
   },
-  "required": ["type"],
+  "required": ["type", "uuid"],
   "additionalProperties": false
 }

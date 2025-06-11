@@ -5,11 +5,11 @@
   "properties": {
     "type": {
         "type": "string",
-        "const": "failed-reconnect"
+        "const": "failed reconnect"
     },
     "reason": {
       "type": "string",
-      "enum": ["invalid-uuid","server-full"]
+      "enum": ["invalid uuid","server full"]
     },
     "shouldReset": {
       "type": "boolean"
