@@ -1,0 +1,99 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Message",
+    "type": "object",
+    "oneOf": [
+        {
+            "title": "ClientMessage",
+            "oneOf": [
+                {
+                    "title": "ClientInitialConnectMessage",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "const": "initial connect"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                },
+                {
+                    "title": "ClientReconnectMessage",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "const": "reconnect"
+                        },
+                        "uuid": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "uuid"
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "ServerMessage",
+            "oneOf": [
+                {
+                    "title": "ServerSuccessfulReconnect",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "const": "successful reconnect"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                },
+                {
+                    "title": "ServerFailedReconnectMessage",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "const": "failed reconnect"
+                        },
+                        "reason": {
+                            "type": "string",
+                            "enum": [
+                                "invalid uuid",
+                                "server full"
+                            ]
+                        },
+                        "shouldReset": {
+                            "type": "boolean"
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "reason",
+                        "shouldReset"
+                    ]
+                },
+                {
+                    "title": "ServerUUIDAssignmentMessage",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "const": "uuid assignment"
+                        },
+                        "uuid": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "uuid"
+                    ]
+                }
+            ]
+        }
+    ],
+    "additionalProperties": false
+}
