@@ -13,61 +13,52 @@ def rmdir(directory: Path):
 
 
 if __name__ == "__main__":
-    schema: Path = Path(__file__).parent.resolve()
+    scripts: Path = Path(__file__).parent.resolve()
 
-    # Make sure quick type is installed
-    # Assume if node_modules folder exists then quicktype is installed
-    if not schema.joinpath("node_modules").is_dir():
-        run(["npm", "ci"], cwd=schema)
+    backend_shared = scripts.parent.resolve().joinpath("backend").joinpath("shared")
 
-    common: Path = schema.joinpath("common")
+    frontend = scripts.parent.resolve().joinpath("frontend")
 
-    backend_generated = (
-        schema.parent.resolve().joinpath("backend").joinpath("generated")
-    )
-
-    frontend_generated = (
-        schema.parent.resolve()
-        .joinpath("frontend")
-        .joinpath("src")
-        .joinpath("generated")
-    )
+    frontend_generated = frontend.joinpath("src").joinpath("generated")
 
     # Delete directories if they exist
-    if backend_generated.is_dir():
-        rmdir(backend_generated)
-    backend_generated.mkdir()
-
     if frontend_generated.is_dir():
         rmdir(frontend_generated)
     frontend_generated.mkdir()
 
     # Iterate through schemas
-    for i in common.iterdir():
+    for i in backend_shared.iterdir():
         # Ideally we should do checks for .json ending
         # TODO: Would be cool to preserve folder structure if we end up nesting schemas
 
+        # $ pydantic2ts --module ./backend/api.py --output ./frontend/apiTypes.ts
+
         if i.is_file():
-            # TypeScript types
+            # Generate TypeScript types
             run(
                 [
-                    schema.joinpath("node_modules")
+                    "pydantic2ts",
+                    "--module",
+                    i,
+                    "--output",
+                    str(frontend_generated.joinpath(i.stem + ".d.ts")),
+                    "--json2ts-cmd",
+                    frontend.joinpath("node_modules")
                     .joinpath(".bin")
                     .joinpath("json2ts"),
-                    i,
-                    str(frontend_generated.joinpath(i.stem + ".d.ts")),
                 ]
             )
 
-            # TypeScript guards
+            # Generate TypeScript guards
             run(
                 [
-                    schema.joinpath("node_modules")
+                    frontend.joinpath("node_modules")
                     .joinpath(".bin")
                     .joinpath("ts-auto-guard"),
                     "--export-all",
                     str(frontend_generated.joinpath(i.stem + ".d.ts")),
-                ]
+                ],
+                cwd=frontend,
             )
 
             path = frontend_generated.joinpath(i.stem + ".guard.ts")

@@ -4,18 +4,14 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from game_state import GameState
 from connectivity import ConnectionManager, WebsocketMedium
 from player import Player, PlayerManager
-from message import (
-    FailedReconnectionMessage,
-    ReconnectMessage,
-    IncomingMessage,
-    UUIDAssignmentMessage,
-    OutgoingMessage,
+from backend.shared.message import (
+    ServerFailedReconnectionMessage,
+    ClientReconnectMessage,
+    ClientMessage,
+    ServerUUIDAssignmentMessage,
+    ServerMessage,
 )
 from pydantic import ValidationError
-
-from generated.clientMessage import ClientMessage
-from generated.serverUuidAssignmentMessage import ServerUUIDAssignmentMessage
-
 
 connection_manager = ConnectionManager()
 player_manager = PlayerManager()
@@ -54,28 +50,28 @@ async def websocket_endpoint(ws: WebSocket):
             print(player_manager.players)
             data = await c.receive_text()
             incoming_msg = ClientMessage.model_validate_json(data)
-            match incoming_msg.type.value:
+            match incoming_msg.type:
                 case "initial connect":
                     p = Player(c)
                     player_manager.add_player(p)
                     outgoing_msg = ServerUUIDAssignmentMessage(
-                        type="uuid-assignment", uuid=p.uuid
+                        type="uuid assignment", uuid=p.uuid
                     )
                     await connection_manager.send_personal_message(
                         c, outgoing_msg.model_dump_json()
                     )
                 case "reconnect":
-                    incoming_msg = ReconnectMessage.model_validate_json(data)
+                    incoming_msg = ClientReconnectMessage.model_validate_json(data)
                     p = player_manager.reconnect_player_via_UUID(incoming_msg.uuid, c)
                     if p is not None:
-                        outgoing_msg = OutgoingMessage(type="successful-reconnect")
+                        outgoing_msg = ServerMessage(type="successful reconnect")
                         await connection_manager.send_personal_message(
                             c, outgoing_msg.model_dump_json()
                         )
                     else:
-                        outgoing_msg = FailedReconnectionMessage(
-                            type="failed-reconnect",
-                            reason="invalid-uuid",
+                        outgoing_msg = ServerFailedReconnectionMessage(
+                            type="failed reconnect",
+                            reason="invalid uuid",
                             shouldReset=(state == GameState.Lobby),
                         )
                         await connection_manager.send_personal_message(

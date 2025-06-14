@@ -86,7 +86,6 @@ export const WebsocketProvider = (props: iProps) => {
     };
 
     ws.current = socket;
-    ws.current.send;
 
     return () => {
       socket.close();
