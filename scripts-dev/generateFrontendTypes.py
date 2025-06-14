@@ -26,7 +26,7 @@ if __name__ == "__main__":
                 [
                     venv_binaries.joinpath("pydantic2ts"),
                     "--module",
-                    i,
+                    str(i),
                     "--output",
                     str(frontend_generated.joinpath(i.stem + ".d.ts")),
                     "--json2ts-cmd",
