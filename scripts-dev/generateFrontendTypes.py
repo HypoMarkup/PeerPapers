@@ -1,5 +1,11 @@
 from subprocess import run
-from common import rmdir, frontend_directory, backend_directory, venv_binaries, is_windows
+from common import (
+    rmdir,
+    frontend_directory,
+    backend_directory,
+    venv_binaries,
+    is_windows,
+)
 
 if __name__ == "__main__":
     frontend_generated = frontend_directory.joinpath("src").joinpath("generated")
@@ -35,7 +41,7 @@ if __name__ == "__main__":
                 [
                     frontend_directory.joinpath("node_modules")
                     .joinpath(".bin")
-                    .joinpath("ts-auto-guard" + ".cmd" if is_windows else ""),
+                    .joinpath("ts-auto-guard" + (".cmd" if is_windows else "")),
                     "--export-all",
                     str(frontend_generated.joinpath(i.stem + ".d.ts")),
                 ],
