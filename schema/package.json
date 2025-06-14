@@ -8,6 +8,7 @@
     "generate": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "quicktype": "^23.2.6"
+    "json-schema-to-typescript": "^15.0.4",
+    "ts-auto-guard": "^5.0.1"
   }
 }

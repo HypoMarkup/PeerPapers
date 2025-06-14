@@ -48,32 +48,38 @@ if __name__ == "__main__":
         # TODO: Would be cool to preserve folder structure if we end up nesting schemas
 
         if i.is_file():
-            # Python
+            # TypeScript types
             run(
                 [
                     schema.joinpath("node_modules")
                     .joinpath(".bin")
-                    .joinpath("quicktype"),
-                    "--src-lang",
-                    "schema",
+                    .joinpath("json2ts"),
                     i,
-                    "--just-types",
-                    "--pydantic-base-model",
-                    "--out",
-                    backend_generated.joinpath(i.stem + ".py"),
+                    str(frontend_generated.joinpath(i.stem + ".d.ts")),
                 ]
             )
-            # TypeScript
+
+            # TypeScript guards
             run(
                 [
                     schema.joinpath("node_modules")
                     .joinpath(".bin")
-                    .joinpath("quicktype"),
-                    "--src-lang",
-                    "schema",
-                    i,
-                    "--prefer-unions",
-                    "--out",
-                    frontend_generated.joinpath(i.stem + ".ts"),
+                    .joinpath("ts-auto-guard"),
+                    "--export-all",
+                    str(frontend_generated.joinpath(i.stem + ".d.ts")),
                 ]
             )
+
+            path = frontend_generated.joinpath(i.stem + ".guard.ts")
+            # Add type to import of typescript guard
+
+            # Read the file contents
+            with open(path, "r", encoding="utf-8") as file:
+                content = file.read()
+
+            # Replace all occurrences of 'import {' with 'import type {'
+            new_content = content.replace("import {", "import type {")
+
+            # Write the modified content back to the file
+            with open(path, "w", encoding="utf-8") as file:
+                file.write(new_content)
