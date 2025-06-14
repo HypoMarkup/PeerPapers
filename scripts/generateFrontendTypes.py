@@ -22,7 +22,9 @@ if __name__ == "__main__":
             # Generate TypeScript types
             run(
                 [
-                    "pydantic2ts",
+                    backend_directory.joinpath("venv")
+                    .joinpath("bin")
+                    .joinpath("pydantic2ts"),
                     "--module",
                     i,
                     "--output",
