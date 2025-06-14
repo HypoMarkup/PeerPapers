@@ -1,6 +1,10 @@
 from pydantic import BaseModel
 from typing import Literal
 
+#
+# Client messages
+#
+
 
 class ClientMessage(BaseModel):
     type: Literal["initial connect", "reconnect"]
@@ -13,6 +17,11 @@ class ClientConnectMessage(BaseModel):
 class ClientReconnectMessage(BaseModel):
     type: Literal["reconnect"]
     uuid: str
+
+
+#
+# Server messages
+#
 
 
 class ServerMessage(BaseModel):

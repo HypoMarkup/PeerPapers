@@ -24,6 +24,7 @@ function resetClient() {
 }
 
 export interface WebSocketInterface {
+  isConnected: boolean;
   isReady: boolean;
   UUID: string | null;
   message: ServerMessage | null;
@@ -33,6 +34,7 @@ export interface WebSocketInterface {
 }
 
 export const WebsocketContext = createContext<WebSocketInterface>({
+  isConnected: false,
   isReady: false,
   message: null,
   UUID: null,
@@ -42,8 +44,11 @@ export const WebsocketContext = createContext<WebSocketInterface>({
 type iProps = { children?: ReactNode };
 
 export const WebsocketProvider = (props: iProps) => {
-  // Ready
+  // Ready to be used
   const [isReady, setIsReady] = useState(false);
+
+  // Connected to server
+  const [isConnected, setIsConnected] = useState(false);
 
   const [msg, setMsg] = useState<ServerMessage | null>(null);
 
@@ -58,24 +63,30 @@ export const WebsocketProvider = (props: iProps) => {
     const socket = new WebSocket("ws://127.0.0.1:8000/ws");
 
     socket.onopen = () => {
-      if (isLocalStorageEmpty("uuid")) {
-        // If no uuid exists in localstorage, fresh connection
-        const handshakeMsg: ClientMessage = {
-          type: "initial connect",
-        };
-        ws.current?.send(JSON.stringify(handshakeMsg));
-      } else if (!isLocalStorageEmpty("uuid")) {
-        // If a uuid exists in memory, attempt to reconnect
-        const handshakeMsg: ClientReconnectMessage = {
-          type: "reconnect",
-          uuid: localStorage["uuid"],
-        };
-        ws.current?.send(JSON.stringify(handshakeMsg));
-      } else {
-        resetClient();
+      if (ws.current?.readyState == 1) {
+        setIsConnected(true);
+        if (isLocalStorageEmpty("uuid")) {
+          // If no uuid exists in localstorage, fresh connection
+          const handshakeMsg: ClientMessage = {
+            type: "initial connect",
+          };
+          ws.current?.send(JSON.stringify(handshakeMsg));
+        } else if (!isLocalStorageEmpty("uuid")) {
+          // If a uuid exists in memory, attempt to reconnect
+          const handshakeMsg: ClientReconnectMessage = {
+            type: "reconnect",
+            uuid: localStorage["uuid"],
+          };
+          ws.current?.send(JSON.stringify(handshakeMsg));
+        } else {
+          resetClient();
+        }
       }
     };
-    socket.onclose = () => setIsReady(false);
+    socket.onclose = () => {
+      setIsReady(false);
+      setIsConnected(false);
+    };
     socket.onmessage = (event) => {
       const m = JSON.parse(event.data);
       if (isServerMessage(m)) {
@@ -88,7 +99,9 @@ export const WebsocketProvider = (props: iProps) => {
     ws.current = socket;
 
     return () => {
-      socket.close();
+      if (isConnected) {
+        socket.close();
+      }
     };
   }, []);
 
@@ -114,6 +127,7 @@ export const WebsocketProvider = (props: iProps) => {
   }
 
   const ret: WebSocketInterface = {
+    isConnected: isConnected,
     isReady: isReady,
     UUID: uuid,
     message: msg,
