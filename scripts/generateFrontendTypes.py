@@ -1,25 +1,10 @@
-from pathlib import Path
 from subprocess import run
-
-
-def rmdir(directory: Path):
-    directory = Path(directory)
-    for item in directory.iterdir():
-        if item.is_dir():
-            rmdir(item)
-        else:
-            item.unlink()
-    directory.rmdir()
-
+from common import rmdir, frontend_directory, backend_directory
 
 if __name__ == "__main__":
-    scripts: Path = Path(__file__).parent.resolve()
+    frontend_generated = frontend_directory.joinpath("src").joinpath("generated")
 
-    backend_shared = scripts.parent.resolve().joinpath("backend").joinpath("shared")
-
-    frontend = scripts.parent.resolve().joinpath("frontend")
-
-    frontend_generated = frontend.joinpath("src").joinpath("generated")
+    backend_shared = backend_directory.joinpath("shared")
 
     # Delete directories if they exist
     if frontend_generated.is_dir():
@@ -43,7 +28,7 @@ if __name__ == "__main__":
                     "--output",
                     str(frontend_generated.joinpath(i.stem + ".d.ts")),
                     "--json2ts-cmd",
-                    frontend.joinpath("node_modules")
+                    frontend_directory.joinpath("node_modules")
                     .joinpath(".bin")
                     .joinpath("json2ts"),
                 ]
@@ -52,13 +37,13 @@ if __name__ == "__main__":
             # Generate TypeScript guards
             run(
                 [
-                    frontend.joinpath("node_modules")
+                    frontend_directory.joinpath("node_modules")
                     .joinpath(".bin")
                     .joinpath("ts-auto-guard"),
                     "--export-all",
                     str(frontend_generated.joinpath(i.stem + ".d.ts")),
                 ],
-                cwd=frontend,
+                cwd=frontend_directory,
             )
 
             path = frontend_generated.joinpath(i.stem + ".guard.ts")
