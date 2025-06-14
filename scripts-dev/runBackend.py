@@ -1,9 +1,9 @@
 from subprocess import run
-from common import backend_directory, scripts_directory, venv_binaries
+from common import backend_directory, scripts_directory, venv_binaries, python_bin
 
 if __name__ == "__main__":
     if not backend_directory.joinpath("venv").is_dir():
-        run(["python", "setupBackend.py"], cwd=scripts_directory)
+        run([python_bin, "setupBackend.py"], cwd=scripts_directory)
 
     run(
         [
