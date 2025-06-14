@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect, createContext } from "react";
 import type { ReactNode } from "react";
 import type {
-  IncomingMessage,
-  OutgoingMessage,
-  ReconnectMessage,
-} from "./message";
+  ServerMessage,
+  ClientMessage,
+  ClientReconnectMessage,
+} from "./generated/message";
 import {
-  isUUIDAssignmentMessage,
-  isIncomingMessage,
-  isFailedReconnectionMessage,
-} from "./message.guard";
+  isServerUUIDAssignmentMessage,
+  isServerMessage,
+  isServerFailedReconnectionMessage,
+} from "./generated/message.guard";
 
 // Source:
 // https://ably.com/blog/websockets-react-tutorial
@@ -26,7 +26,7 @@ function resetClient() {
 export interface WebSocketInterface {
   isReady: boolean;
   UUID: string | null;
-  message: IncomingMessage | null;
+  message: ServerMessage | null;
   send:
     | ((data: string | ArrayBufferLike | Blob | ArrayBufferView) => void)
     | undefined;
@@ -45,7 +45,7 @@ export const WebsocketProvider = (props: iProps) => {
   // Ready
   const [isReady, setIsReady] = useState(false);
 
-  const [msg, setMsg] = useState<IncomingMessage | null>(null);
+  const [msg, setMsg] = useState<ServerMessage | null>(null);
 
   // TODO: Add checks on entered name to prevent empty names and other
   const [uuid, setUUID] = useState<string>("");
@@ -60,13 +60,13 @@ export const WebsocketProvider = (props: iProps) => {
     socket.onopen = () => {
       if (isLocalStorageEmpty("uuid")) {
         // If no uuid exists in localstorage, fresh connection
-        const handshakeMsg: OutgoingMessage = {
-          type: "initial-connect",
+        const handshakeMsg: ClientMessage = {
+          type: "initial connect",
         };
         ws.current?.send(JSON.stringify(handshakeMsg));
       } else if (!isLocalStorageEmpty("uuid")) {
         // If a uuid exists in memory, attempt to reconnect
-        const handshakeMsg: ReconnectMessage = {
+        const handshakeMsg: ClientReconnectMessage = {
           type: "reconnect",
           uuid: localStorage["uuid"],
         };
@@ -78,7 +78,7 @@ export const WebsocketProvider = (props: iProps) => {
     socket.onclose = () => setIsReady(false);
     socket.onmessage = (event) => {
       const m = JSON.parse(event.data);
-      if (isIncomingMessage(m)) {
+      if (isServerMessage(m)) {
         setMsg(m);
       } else {
         console.error("Invalid message: " + event.data);
@@ -93,15 +93,15 @@ export const WebsocketProvider = (props: iProps) => {
   }, []);
 
   if (!isReady && msg !== null) {
-    if (isUUIDAssignmentMessage(msg)) {
+    if (isServerUUIDAssignmentMessage(msg)) {
       setUUID(msg.uuid);
       setIsReady(true);
       localStorage["uuid"] = msg.uuid;
-    } else if (isIncomingMessage(msg)) {
-      if (msg.type == "successful-reconnect") {
+    } else if (isServerMessage(msg)) {
+      if (msg.type == "successful reconnect") {
         setUUID(localStorage["uuid"]);
         setIsReady(true);
-      } else if (isFailedReconnectionMessage(msg)) {
+      } else if (isServerFailedReconnectionMessage(msg)) {
         // Todo: Display UI depending on message, if reset isn't suggested, if lobby is full ui should indicate
         console.error(msg);
         if (msg.shouldReset) {

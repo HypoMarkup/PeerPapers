@@ -4,7 +4,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from game_state import GameState
 from connectivity import ConnectionManager, WebsocketMedium
 from player import Player, PlayerManager
-from backend.shared.message import (
+from shared.message import (
     ServerFailedReconnectionMessage,
     ClientReconnectMessage,
     ClientMessage,
