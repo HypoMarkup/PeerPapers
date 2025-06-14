@@ -46,3 +46,6 @@ npm-debug.log*
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# Generated code
+generated
