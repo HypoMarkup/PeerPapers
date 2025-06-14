@@ -1,5 +1,5 @@
 from subprocess import run
-from common import backend_directory, scripts_directory
+from common import backend_directory, scripts_directory, venv_binaries
 
 if __name__ == "__main__":
     if not backend_directory.joinpath("venv").is_dir():
@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     run(
         [
-            backend_directory.joinpath("venv").joinpath("bin").joinpath("fastapi"),
+            venv_binaries.joinpath("fastapi"),
             "dev",
             "main.py",
         ],

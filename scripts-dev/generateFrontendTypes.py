@@ -1,5 +1,5 @@
 from subprocess import run
-from common import rmdir, frontend_directory, backend_directory
+from common import rmdir, frontend_directory, backend_directory, venv_binaries, is_windows
 
 if __name__ == "__main__":
     frontend_generated = frontend_directory.joinpath("src").joinpath("generated")
@@ -13,18 +13,12 @@ if __name__ == "__main__":
 
     # Iterate through schemas
     for i in backend_shared.iterdir():
-        # Ideally we should do checks for .json ending
-        # TODO: Would be cool to preserve folder structure if we end up nesting schemas
-
         # $ pydantic2ts --module ./backend/api.py --output ./frontend/apiTypes.ts
-
         if i.is_file():
             # Generate TypeScript types
             run(
                 [
-                    backend_directory.joinpath("venv")
-                    .joinpath("bin")
-                    .joinpath("pydantic2ts"),
+                    venv_binaries.joinpath("pydantic2ts"),
                     "--module",
                     i,
                     "--output",
@@ -41,7 +35,7 @@ if __name__ == "__main__":
                 [
                     frontend_directory.joinpath("node_modules")
                     .joinpath(".bin")
-                    .joinpath("ts-auto-guard"),
+                    .joinpath("ts-auto-guard" + ".cmd" if is_windows else ""),
                     "--export-all",
                     str(frontend_generated.joinpath(i.stem + ".d.ts")),
                 ],

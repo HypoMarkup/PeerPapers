@@ -1,5 +1,5 @@
 from subprocess import run
-from common import backend_directory
+from common import backend_directory,venv_binaries
 
 if __name__ == "__main__":
     if backend_directory.joinpath("venv").is_dir():
@@ -12,10 +12,10 @@ if __name__ == "__main__":
     print("Installing dependencies")
     run(
         [
-            backend_directory.joinpath("venv").joinpath("bin").joinpath("pip"),
+            venv_binaries.joinpath("pip"),
             "install",
             "-r",
             "requirements.txt",
         ],
-        cwd=backend_directory,
+        cwd=backend_directory
     )
