@@ -24,7 +24,6 @@ function resetClient() {
 }
 
 export interface WebSocketInterface {
-  isConnected: boolean;
   isReady: boolean;
   UUID: string | null;
   message: ServerMessage | null;
@@ -34,7 +33,6 @@ export interface WebSocketInterface {
 }
 
 export const WebsocketContext = createContext<WebSocketInterface>({
-  isConnected: false,
   isReady: false,
   message: null,
   UUID: null,
@@ -127,7 +125,6 @@ export const WebsocketProvider = (props: iProps) => {
   }
 
   const ret: WebSocketInterface = {
-    isConnected: isConnected,
     isReady: isReady,
     UUID: uuid,
     message: msg,

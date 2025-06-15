@@ -33,7 +33,8 @@ if __name__ == "__main__":
                     frontend_directory.joinpath("node_modules")
                     .joinpath(".bin")
                     .joinpath("json2ts"),
-                ]
+                ],
+                cwd=backend_directory,
             )
 
             # Generate TypeScript guards

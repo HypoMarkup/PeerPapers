@@ -1,17 +1,20 @@
 import uuid
 from connectivity import CommunicationMedium
 from weakref import ref, ReferenceType
-from typing import Optional
+from typing import Optional, Callable
+from shared.message import PlayerData
 
 weakSock = ReferenceType[CommunicationMedium]
 
 
 class Player:
     sock: weakSock
+    data: PlayerData | None
 
     def __init__(self, sock: CommunicationMedium):
         self.uuid: str = self.generate_UUID()
         self.set_sock(sock)
+        self.data = None
 
     def generate_UUID(self) -> str:
         # uuid4 is random
@@ -19,6 +22,9 @@ class Player:
 
     def set_sock(self, sock: CommunicationMedium):
         self.sock = ref(sock)
+
+    def get_sock(self):
+        return self.sock()
 
     def is_connected(self):
         sock_instance = self.sock()
@@ -35,6 +41,9 @@ class PlayerManager:
     def add_player(self, p: Player):
         self.players.append(p)
 
+    def remove_player(self, p: Player):
+        self.players.remove(p)
+
     def reconnect_player_via_UUID(
         self, uuid: str, c: CommunicationMedium
     ) -> Optional[Player]:
@@ -47,3 +56,12 @@ class PlayerManager:
                     # TODO: Handle this
                     print("Player is already connected")
         return None
+
+    def get_player(self, condition: Callable[[Player], bool]):
+        for i in self.players:
+            if condition(i):
+                return i
+        return None
+
+    def get_player_by_connection(self, c: CommunicationMedium):
+        return self.get_player(lambda x: x.get_sock() == c)
