@@ -10,3 +10,8 @@
 - If it is allowed it begs the question, how long before you are kicked
   - If the host leaves, it's annoying
 - No reason to allow reconnection, no progress can be lost
+
+# Message vs Broadcast
+
+- Messages are should be sent to one client
+- Broadcast are intended to be sent to all clients or more than one client

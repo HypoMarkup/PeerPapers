@@ -6,13 +6,14 @@ from game_state import GameState
 from connectivity import ConnectionManager, WebsocketMedium
 from player import Player, PlayerManager
 from shared.message import (
+    PlayerStatus,
     ServerFailedReconnectionMessage,
     ClientReconnectMessage,
     ClientMessage,
+    ServerPlayersStatusBroadcast,
     ServerUUIDAssignmentMessage,
     ServerMessage,
-    ServerSendPlayerData,
-    PlayerData,
+    ServerSendPlayerDataMessage,
     ClientSetPlayerDataMessage,
 )
 from pydantic import ValidationError
@@ -27,7 +28,29 @@ async def glorious_main_loop():
     while True:
         # All game logic goes here
         await sleep(5)
-        print("hi")
+
+        if state == GameState.Lobby:
+            player_manager.filter_players(lambda x: x.is_connected())
+
+        outgoing_msg: ServerPlayersStatusBroadcast = ServerPlayersStatusBroadcast(
+            type="players status",
+            status=list(
+                map(
+                    lambda x: PlayerStatus(
+                        name=x.name,
+                        picture=x.picture,
+                        isConnected=x.is_connected(),
+                        isHost=x.is_host,
+                    ),
+                    filter(
+                        lambda x: len(x.name) != 0,
+                        player_manager.players,
+                    ),
+                )
+            ),
+        )
+
+        await connection_manager.broadcast(outgoing_msg.model_dump_json())
 
 
 @asynccontextmanager
@@ -91,15 +114,15 @@ async def websocket_endpoint(ws: WebSocket):
                     if p == None:
                         raise WebSocketDisconnect(code=1003, reason="Not connected")
 
-                    if p.data == None:
-                        data = PlayerData(name="", picture="")
-                        outgoing_msg = ServerSendPlayerData(
-                            type="send player data", data=data
-                        )
-                    else:
-                        outgoing_msg = ServerSendPlayerData(
-                            type="send player data", data=p.data
-                        )
+                    # if len(p.name) == 0:
+                    #     outgoing_msg = ServerSendPlayerData(
+                    #         type="send player data", name = "", picture=""
+                    #     )
+                    # else:
+                    outgoing_msg = ServerSendPlayerDataMessage(
+                        type="send player data", name=p.name, picture=p.picture
+                    )
+
                     await connection_manager.send_personal_message(
                         c, outgoing_msg.model_dump_json()
                     )
@@ -108,21 +131,14 @@ async def websocket_endpoint(ws: WebSocket):
                         raise WebSocketDisconnect(code=1003, reason="Not connected")
 
                     incoming_msg = ClientSetPlayerDataMessage.model_validate_json(data)
-                    new_name = incoming_msg.data.name
+                    new_name = incoming_msg.name
                     if (
                         is_valid_name(new_name)
-                        and player_manager.get_player(
-                            lambda x: x.data != None and x.data.name == new_name
-                        )
+                        and player_manager.get_player(lambda x: x.name == new_name)
                         == None
                     ):
-                        if p.data is None:
-                            p.data = PlayerData(
-                                name=new_name, picture=incoming_msg.data.picture
-                            )
-                        else:
-                            p.data.name = new_name
-                            p.data.picture = incoming_msg.data.picture
+                        p.name = new_name
+                        p.picture = incoming_msg.picture
                     else:
                         outgoing_msg = ServerMessage(type="invalid player data")
                         await connection_manager.send_personal_message(

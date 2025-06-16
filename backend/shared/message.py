@@ -1,17 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal
-
-#
-# Player data
-#
-
-
-class PlayerData(BaseModel):
-    name: str
-
-    # URL
-    picture: str
-
+from typing import Literal, List
 
 #
 # Client messages
@@ -33,7 +21,9 @@ class ClientReconnectMessage(BaseModel):
 
 class ClientSetPlayerDataMessage(BaseModel):
     type: Literal["set player data"]
-    data: PlayerData
+
+    name: str
+    picture: str
 
 
 #
@@ -48,6 +38,7 @@ class ServerMessage(BaseModel):
         "failed reconnect",
         "send player data",
         "invalid player data",
+        "players status",
     ]
 
 
@@ -66,6 +57,20 @@ class ServerFailedReconnectionMessage(BaseModel):
     shouldReset: bool
 
 
-class ServerSendPlayerData(BaseModel):
+class ServerSendPlayerDataMessage(BaseModel):
     type: Literal["send player data"]
-    data: PlayerData
+
+    name: str
+    picture: str
+
+
+class PlayerStatus(BaseModel):
+    name: str
+    picture: str
+    isConnected: bool
+    isHost: bool
+
+
+class ServerPlayersStatusBroadcast(BaseModel):
+    type: Literal["players status"]
+    status: List[PlayerStatus]

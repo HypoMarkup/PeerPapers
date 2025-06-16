@@ -2,19 +2,24 @@ import uuid
 from connectivity import CommunicationMedium
 from weakref import ref, ReferenceType
 from typing import Optional, Callable
-from shared.message import PlayerData
 
 weakSock = ReferenceType[CommunicationMedium]
 
 
 class Player:
     sock: weakSock
-    data: PlayerData | None
+
+    name: str
+    picture: str
+    is_host: bool
 
     def __init__(self, sock: CommunicationMedium):
         self.uuid: str = self.generate_UUID()
         self.set_sock(sock)
-        self.data = None
+
+        self.name = ""
+        self.picture = ""
+        self.is_host = False
 
     def generate_UUID(self) -> str:
         # uuid4 is random
@@ -62,6 +67,9 @@ class PlayerManager:
             if condition(i):
                 return i
         return None
+
+    def filter_players(self, condition: Callable[[Player], bool]):
+        self.players = list(filter(condition, self.players))
 
     def get_player_by_connection(self, c: CommunicationMedium):
         return self.get_player(lambda x: x.get_sock() == c)
