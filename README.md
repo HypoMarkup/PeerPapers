@@ -5,7 +5,7 @@ A real-time collaborative paper review and annotation platform built with Python
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.10+
 - pip
 - virtualenv 
 - Node.js 16+
