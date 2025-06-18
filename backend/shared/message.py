@@ -5,6 +5,10 @@ from typing import Literal, List
 # Client messages
 #
 
+# Action defined as a message which alters state on the backend maybe...
+# Or maybe a message which can fail or succeed, shades of monads??? 🤔
+actionTypes = Literal["set player data"]
+
 
 class ClientMessage(BaseModel):
     type: Literal["initial connect", "reconnect", "set player data", "get player data"]
@@ -33,13 +37,29 @@ class ClientSetPlayerDataMessage(BaseModel):
 
 class ServerMessage(BaseModel):
     type: Literal[
+        # Handshake start
         "uuid assignment",
         "successful reconnect",
         "failed reconnect",
+        # Handshake end
+        "action success",
+        "action fail",
         "send player data",
-        "invalid player data",
         "players status",
     ]
+
+
+# Message to be used in cases where a client message can or success fail
+# e.g. when setting player data
+class ServerActionSuccessMessage(BaseModel):
+    type: Literal["action success"]
+    actionType: actionTypes
+
+
+class ServerActionFailMessage(BaseModel):
+    type: Literal["action fail"]
+    actionType: actionTypes
+    reason: str
 
 
 class ServerUUIDAssignmentMessage(BaseModel):

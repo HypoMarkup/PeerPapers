@@ -7,6 +7,8 @@ from connectivity import ConnectionManager, WebsocketMedium
 from player import Player, PlayerManager
 from shared.message import (
     PlayerStatus,
+    ServerActionFailMessage,
+    ServerActionSuccessMessage,
     ServerFailedReconnectionMessage,
     ClientReconnectMessage,
     ClientMessage,
@@ -139,8 +141,18 @@ async def websocket_endpoint(ws: WebSocket):
                     ):
                         p.name = new_name
                         p.pictureURL = incoming_msg.pictureURL
+                        outgoing_msg = ServerActionSuccessMessage(
+                            type="action success", actionType="set player data"
+                        )
+                        await connection_manager.send_personal_message(
+                            c, outgoing_msg.model_dump_json()
+                        )
                     else:
-                        outgoing_msg = ServerMessage(type="invalid player data")
+                        outgoing_msg = ServerActionFailMessage(
+                            type="action fail",
+                            actionType="set player data",
+                            reason="Invalid player data",
+                        )
                         await connection_manager.send_personal_message(
                             c, outgoing_msg.model_dump_json()
                         )
