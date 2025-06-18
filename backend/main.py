@@ -38,7 +38,7 @@ async def glorious_main_loop():
                 map(
                     lambda x: PlayerStatus(
                         name=x.name,
-                        picture=x.picture,
+                        pictureURL=x.pictureURL,
                         isConnected=x.is_connected(),
                         isHost=x.is_host,
                     ),
@@ -120,7 +120,7 @@ async def websocket_endpoint(ws: WebSocket):
                     #     )
                     # else:
                     outgoing_msg = ServerSendPlayerDataMessage(
-                        type="send player data", name=p.name, picture=p.picture
+                        type="send player data", name=p.name, pictureURL=p.pictureURL
                     )
 
                     await connection_manager.send_personal_message(
@@ -138,7 +138,7 @@ async def websocket_endpoint(ws: WebSocket):
                         == None
                     ):
                         p.name = new_name
-                        p.picture = incoming_msg.picture
+                        p.pictureURL = incoming_msg.pictureURL
                     else:
                         outgoing_msg = ServerMessage(type="invalid player data")
                         await connection_manager.send_personal_message(

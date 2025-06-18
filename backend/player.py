@@ -10,7 +10,7 @@ class Player:
     sock: weakSock
 
     name: str
-    picture: str
+    pictureURL: str
     is_host: bool
 
     def __init__(self, sock: CommunicationMedium):
@@ -18,7 +18,7 @@ class Player:
         self.set_sock(sock)
 
         self.name = ""
-        self.picture = ""
+        self.pictureURL = ""
         self.is_host = False
 
     def generate_UUID(self) -> str:

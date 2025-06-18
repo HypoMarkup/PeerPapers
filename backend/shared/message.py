@@ -23,7 +23,7 @@ class ClientSetPlayerDataMessage(BaseModel):
     type: Literal["set player data"]
 
     name: str
-    picture: str
+    pictureURL: str
 
 
 #
@@ -61,12 +61,12 @@ class ServerSendPlayerDataMessage(BaseModel):
     type: Literal["send player data"]
 
     name: str
-    picture: str
+    pictureURL: str
 
 
 class PlayerStatus(BaseModel):
     name: str
-    picture: str
+    pictureURL: str
     isConnected: bool
     isHost: bool
 

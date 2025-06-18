@@ -4,6 +4,8 @@
   - Identification when reconnecting is done through UUID
   - If another user finds out another users UUID they can potentially reconnect as that user
     - Currently if an already connecting user attempts to the reconnect, the reconnect fails however if for some reason that player disconnects, their session could be hijacked
+- Usernames should be used for identification, hence they must be unique
+  - Backend should guarantee this
 
 # Reconnection is not allowed in lobby
 
