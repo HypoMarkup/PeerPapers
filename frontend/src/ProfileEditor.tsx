@@ -20,7 +20,7 @@ import {
   isServerSendPlayerDataMessage,
 } from "./generated/message.guard";
 
-// Enums bad or something "Enums are non ereasable TypeScript code"
+// Enums bad or something "Enums are non erasable TypeScript code"
 type RequestState =
   | "uninitialised"
   | "idle"

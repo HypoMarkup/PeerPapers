@@ -97,6 +97,8 @@ async def websocket_endpoint(ws: WebSocket):
 
                     incoming_msg = ClientReconnectMessage.model_validate_json(data)
                     p = player_manager.reconnect_player_via_UUID(incoming_msg.uuid, c)
+                    # TODO: Handle "already connected" and "never connected" separately
+                    #       Allows for different frontend response
                     if p is not None:
                         outgoing_msg = ServerMessage(type="successful reconnect")
                         await connection_manager.send_personal_message(
