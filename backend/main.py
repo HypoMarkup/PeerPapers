@@ -26,6 +26,7 @@ player_manager = PlayerManager()
 state: GameState = GameState.Lobby
 
 
+# Server -> Clients
 async def glorious_main_loop():
     while True:
         # All game logic goes here
@@ -69,6 +70,7 @@ async def start_main_loop(app: FastAPI):
 app = FastAPI(lifespan=start_main_loop)
 
 
+# Client -> Server
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     c = WebsocketMedium(ws)

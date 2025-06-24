@@ -1,57 +1,65 @@
 import { useState, useRef, useEffect, createContext } from "react";
 import type { ReactNode } from "react";
-import type {
-  ServerMessage,
-  ClientMessage,
-  ClientReconnectMessage,
-} from "./generated/message";
-import {
-  isServerUUIDAssignmentMessage,
-  isServerMessage,
-  isServerFailedReconnectionMessage,
-} from "./generated/message.guard";
+import type { ServerMessage } from "./generated/message";
+import { isServerMessage } from "./generated/message.guard";
+import { Handshake } from "./Handshake";
+import { resetClient } from "./utililties";
 
 // Source:
 // https://ably.com/blog/websockets-react-tutorial
 
-function isLocalStorageEmpty(key: string): boolean {
-  return localStorage[key] === undefined || localStorage[key].length === 0;
-}
-
-function resetClient() {
-  localStorage.clear();
-  location.reload();
-}
-
 export interface WebSocketInterface {
-  isReady: boolean;
-  UUID: string | null;
-  message: ServerMessage | null;
-  send:
-    | ((data: string | ArrayBufferLike | Blob | ArrayBufferView) => void)
-    | undefined;
+  registerHandler: (handler: MessageHandler) => () => void;
+  send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
 }
 
 export const WebsocketContext = createContext<WebSocketInterface>({
-  isReady: false,
-  message: null,
-  UUID: null,
+  registerHandler: (_) => () => {},
   send: () => {},
 });
+
+interface MessageHandler {
+  messageTypes: Set<ServerMessage["type"]>;
+  handler: (message: ServerMessage) => boolean; // returns true if handled
+}
 
 type iProps = { children?: ReactNode };
 
 export const WebsocketProvider = (props: iProps) => {
-  // Ready to be used
-  const [isReady, setIsReady] = useState(false);
-
   // Connected to server
   const [isConnected, setIsConnected] = useState(false);
+  const [isHandshakeComplete, setIsHandshakeComplete] = useState(false);
 
-  const [msg, setMsg] = useState<ServerMessage | null>(null);
+  const [message, setMessage] = useState<ServerMessage>();
+  const [handlers, setHandler] = useState<MessageHandler[]>([]);
 
-  // TODO: Add checks on entered name to prevent empty names and other
-  const [uuid, setUUID] = useState<string>("");
+  const registerHandler = (handler: MessageHandler) => {
+    setHandler((prev) => [...prev, handler]);
+    // Cleanup function
+    return () => setHandler((prev) => prev.filter((h) => h !== handler));
+  };
+
+  const processMessage = () => {
+    if (message === undefined) return;
+
+    let wasHandled = false;
+
+    // Try each registered handler
+    for (const handler of handlers) {
+      if (handler.messageTypes.has(message.type)) {
+        wasHandled = handler.handler(message);
+        if (wasHandled) break;
+      }
+    }
+
+    if (!wasHandled) {
+      console.warn(`No handler for message: ${message.type}`);
+    }
+  };
+
+  useEffect(() => {
+    processMessage();
+  }, [message]);
 
   const ws = useRef<WebSocket>(null);
 
@@ -63,32 +71,16 @@ export const WebsocketProvider = (props: iProps) => {
     socket.onopen = () => {
       if (ws.current?.readyState == 1) {
         setIsConnected(true);
-        if (isLocalStorageEmpty("uuid")) {
-          // If no uuid exists in localstorage, fresh connection
-          const handshakeMsg: ClientMessage = {
-            type: "initial connect",
-          };
-          ws.current?.send(JSON.stringify(handshakeMsg));
-        } else if (!isLocalStorageEmpty("uuid")) {
-          // If a uuid exists in memory, attempt to reconnect
-          const handshakeMsg: ClientReconnectMessage = {
-            type: "reconnect",
-            uuid: localStorage["uuid"],
-          };
-          ws.current?.send(JSON.stringify(handshakeMsg));
-        } else {
-          resetClient();
-        }
       }
     };
     socket.onclose = () => {
-      setIsReady(false);
       setIsConnected(false);
+      resetClient();
     };
     socket.onmessage = (event) => {
       const m = JSON.parse(event.data);
       if (isServerMessage(m)) {
-        setMsg(m);
+        setMessage(m);
       } else {
         console.error("Invalid message: " + event.data);
       }
@@ -103,33 +95,22 @@ export const WebsocketProvider = (props: iProps) => {
     };
   }, []);
 
-  if (!isReady && msg !== null) {
-    if (isServerUUIDAssignmentMessage(msg)) {
-      setUUID(msg.uuid);
-      setIsReady(true);
-      localStorage["uuid"] = msg.uuid;
-    } else if (isServerMessage(msg)) {
-      if (msg.type == "successful reconnect") {
-        setUUID(localStorage["uuid"]);
-        setIsReady(true);
-      } else if (isServerFailedReconnectionMessage(msg)) {
-        // Todo: Display UI depending on message, if reset isn't suggested, if lobby is full ui should indicate
-        console.error(msg);
-        if (msg.shouldReset) {
-          resetClient();
-        }
-      }
-    } else {
-      console.error("Expected UUID handshake");
-    }
+  if (!isConnected || ws.current === null) {
+    return <p>Connecting</p>;
   }
 
   const ret: WebSocketInterface = {
-    isReady: isReady,
-    UUID: uuid,
-    message: msg,
-    send: ws.current?.send.bind(ws.current),
+    registerHandler: registerHandler,
+    send: ws.current.send.bind(ws.current),
   };
+
+  if (!isHandshakeComplete) {
+    return (
+      <WebsocketContext.Provider value={ret}>
+        <Handshake completeHandshake={() => setIsHandshakeComplete(true)} />
+      </WebsocketContext.Provider>
+    );
+  }
 
   return (
     <WebsocketContext.Provider value={ret}>
