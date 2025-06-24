@@ -119,12 +119,6 @@ async def websocket_endpoint(ws: WebSocket):
                 case "get player data":
                     if p == None:
                         raise WebSocketDisconnect(code=1003, reason="Not connected")
-
-                    # if len(p.name) == 0:
-                    #     outgoing_msg = ServerSendPlayerData(
-                    #         type="send player data", name = "", picture=""
-                    #     )
-                    # else:
                     outgoing_msg = ServerSendPlayerDataMessage(
                         type="send player data", name=p.name, pictureURL=p.pictureURL
                     )

@@ -5,8 +5,7 @@ from typing import Literal, List
 # Client messages
 #
 
-# Action defined as a message which alters state on the backend maybe...
-# Or maybe a message which can fail or succeed, shades of monads??? 🤔
+# Types which have a generic fail and success message
 actionTypes = Literal["set player data"]
 
 
