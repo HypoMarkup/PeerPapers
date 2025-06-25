@@ -158,8 +158,12 @@ async def websocket_endpoint(ws: WebSocket):
                 case _:
                     # What are doing
                     raise WebSocketDisconnect(code=1002, reason="Invalid message type")
+    except WebSocketDisconnect as e:
+        print(e.code, e.reason)
+    except ValidationError as e:
+        print(e.json())
+    finally:
 
-    except (WebSocketDisconnect, ValidationError):
         connection_manager.disconnect(c)
 
         # Reconnection not allowed in lobby

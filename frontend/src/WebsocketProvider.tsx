@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, createContext } from "react";
+import { useState, useRef, useEffect, createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import type { ServerMessage } from "./generated/message";
 import { isServerMessage } from "./generated/message.guard";
@@ -19,24 +19,38 @@ export const WebsocketContext = createContext<WebSocketInterface>({
 });
 
 interface MessageHandler {
-  messageTypes: Set<ServerMessage["type"]>;
+  messageType: ServerMessage["type"];
   handler: (message: ServerMessage) => boolean; // returns true if handled
 }
 
 type iProps = { children?: ReactNode };
 
+export function useWebsocketMessage(
+  messageType: ServerMessage["type"],
+  handler: (message: ServerMessage) => boolean
+) {
+  const ws = useContext(WebsocketContext);
+
+  useEffect(() => {
+    return ws.registerHandler({
+      messageType: messageType,
+      handler: handler,
+    });
+  }, [handler]);
+}
+
 export const WebsocketProvider = (props: iProps) => {
-  // Connected to server
   const [isConnected, setIsConnected] = useState(false);
   const [isHandshakeComplete, setIsHandshakeComplete] = useState(false);
 
   const [message, setMessage] = useState<ServerMessage>();
-  const [handlers, setHandler] = useState<MessageHandler[]>([]);
+
+  const handlersRef = useRef<MessageHandler[]>([]);
 
   const registerHandler = (handler: MessageHandler) => {
-    setHandler((prev) => [...prev, handler]);
+    handlersRef.current.push(handler);
     // Cleanup function
-    return () => setHandler((prev) => prev.filter((h) => h !== handler));
+    return () => handlersRef.current.splice(handlersRef.current.length - 1, 1);
   };
 
   const processMessage = () => {
@@ -45,8 +59,8 @@ export const WebsocketProvider = (props: iProps) => {
     let wasHandled = false;
 
     // Try each registered handler
-    for (const handler of handlers) {
-      if (handler.messageTypes.has(message.type)) {
+    for (const handler of handlersRef.current) {
+      if (handler.messageType === message.type) {
         wasHandled = handler.handler(message);
         if (wasHandled) break;
       }

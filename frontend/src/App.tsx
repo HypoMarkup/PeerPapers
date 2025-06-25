@@ -1,25 +1,17 @@
-import { useContext, useState } from "react";
-import { WebsocketContext, type WebSocketInterface } from "./WebsocketProvider";
+import { useContext, useEffect, useState } from "react";
 import { ProfileEditor } from "./ProfileEditor";
+import { WebsocketContext } from "./WebsocketProvider";
 
 function App() {
-  // const ws: WebSocketInterface = useContext(WebsocketContext);
+  const [name, setName] = useState("");
+  const [pictureURL, setPictureURL] = useState("");
 
-  // const [name, setName] = useState("");
-  // const [pictureURL, setPictureURL] = useState("");
-
-  // if (!ws.isReady) {
-  //   return <p>Not connected</p>;
-  // }
-
-  // return (
-  //   <>
-  //     <p>Connected</p>
-  //     <p>{ws.message != null ? JSON.stringify(ws.message) : ""}</p>
-  //     <ProfileEditor setName={setName} setPictureURL={setPictureURL} />
-  //   </>
-  // );
-  return <h1>Hi</h1>;
+  return (
+    <>
+      <p>Connected</p>
+      <ProfileEditor setName={setName} setPictureURL={setPictureURL} />
+    </>
+  );
 }
 
 export default App;

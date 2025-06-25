@@ -1,5 +1,9 @@
-import { useContext, useEffect, useState } from "react";
-import { WebsocketContext, type WebSocketInterface } from "./WebsocketProvider";
+import { useContext, useEffect, useRef, useState } from "react";
+import {
+  useWebsocketMessage,
+  WebsocketContext,
+  type WebSocketInterface,
+} from "./WebsocketProvider";
 import { isLocalStorageEmpty, resetClient } from "./utililties";
 import type {
   ClientMessage,
@@ -19,57 +23,58 @@ export function Handshake({
 
   const [isReconnecting, setIsReconnecting] = useState(false);
 
-  useEffect(() => {
-    if (isLocalStorageEmpty("uuid")) {
-      // If no uuid exists in localstorage, fresh connection
-      setIsReconnecting(false);
-      const handshakeMsg: ClientMessage = {
-        type: "initial connect",
-      };
-      ws.send(JSON.stringify(handshakeMsg));
+  // Stop initial request being sent twice leading to the client being disconnected
+  // Strict mode calls useEffect twice
+  const hasSentRequestRef = useRef(false);
+
+  useWebsocketMessage("uuid assignment", (message) => {
+    if (isServerUUIDAssignmentMessage(message) && !isReconnecting) {
+      localStorage["uuid"] = message.uuid;
+      completeHandshake();
+      return true;
     } else {
-      // If a uuid exists in memory, attempt to reconnect
-      setIsReconnecting(true);
-      const handshakeMsg: ClientReconnectMessage = {
-        type: "reconnect",
-        uuid: localStorage["uuid"],
-      };
-      ws.send(JSON.stringify(handshakeMsg));
+      return false;
     }
-    const unregister = ws.registerHandler({
-      messageTypes: new Set([
-        "uuid assignment",
-        "successful reconnect",
-        "failed reconnect",
-      ]),
-      handler: (message) => {
-        switch (message.type) {
-          case "uuid assignment":
-            if (isServerUUIDAssignmentMessage(message) && !isReconnecting) {
-              localStorage["uuid"] = message.uuid;
-              completeHandshake();
-              return true;
-            } else {
-              return false;
-            }
-          case "successful reconnect":
-            completeHandshake();
-            return true;
-          case "failed reconnect":
-            if (isServerFailedReconnectionMessage(message)) {
-              console.error(message);
-              if (message.shouldReset) {
-                resetClient();
-              }
-              return true;
-            }
-            return false;
-          default:
-            return false;
-        }
-      },
-    });
-    return unregister;
+  });
+
+  useWebsocketMessage("successful reconnect", (_) => {
+    completeHandshake();
+    return true;
+  });
+
+  useWebsocketMessage("failed reconnect", (message) => {
+    if (isServerFailedReconnectionMessage(message)) {
+      console.error(message);
+      if (message.shouldReset) {
+        resetClient();
+      }
+      return true;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (!hasSentRequestRef.current) {
+      let msg;
+      if (isLocalStorageEmpty("uuid")) {
+        // If no uuid exists in localstorage, fresh connection
+        setIsReconnecting(false);
+        const handshakeMsg: ClientMessage = {
+          type: "initial connect",
+        };
+        msg = handshakeMsg;
+      } else {
+        // If a uuid exists in memory, attempt to reconnect
+        setIsReconnecting(true);
+        const handshakeMsg: ClientReconnectMessage = {
+          type: "reconnect",
+          uuid: localStorage["uuid"],
+        };
+        msg = handshakeMsg;
+      }
+      ws.send(JSON.stringify(msg));
+      hasSentRequestRef.current = true;
+    }
   }, []);
 
   return <h1>🤝</h1>;
