@@ -10,13 +10,7 @@ actionTypes = Literal["set player data"]
 
 
 class ClientMessage(BaseModel):
-    type: Literal[
-        "no operation",
-        "initial connect",
-        "reconnect",
-        "set player data",
-        "get player data",
-    ]
+    type: Literal["initial connect", "reconnect", "set player data", "get player data"]
 
 
 class ClientConnectMessage(BaseModel):
@@ -42,7 +36,6 @@ class ClientSetPlayerDataMessage(BaseModel):
 
 class ServerMessage(BaseModel):
     type: Literal[
-        "no operation",
         # Handshake start
         "uuid assignment",
         "successful reconnect",
