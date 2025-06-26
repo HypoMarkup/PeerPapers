@@ -8,16 +8,12 @@
 
 // TODO: message for data updated successfully
 
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import type {
   ClientMessage,
   ClientSetPlayerDataMessage,
 } from "./generated/message";
-import {
-  useWebsocketMessage,
-  WebsocketContext,
-  type WebSocketInterface,
-} from "./WebsocketProvider";
+import { WebsocketContext, type WebSocketInterface } from "./WebsocketProvider";
 import {
   isServerActionFailMessage,
   isServerActionSuccessMessage,
@@ -50,73 +46,46 @@ export function ProfileEditor({
   const [nameForm, setNameForm] = useState("");
   const [pictureURLForm, setPictureURLForm] = useState("");
 
-  useWebsocketMessage(
-    "send player data",
-    useCallback(
-      (message) => {
-        if (
-          requestState == "awaitingGetResult" &&
-          isServerSendPlayerDataMessage(message)
-        ) {
-          setNameForm(message.name);
-          setPictureURLForm(message.pictureURL);
+  useEffect(() => {
+    if (requestState == "awaitingGetResult") {
+      if (
+        ws.message.type == "send player data" &&
+        isServerSendPlayerDataMessage(ws.message)
+      ) {
+        const msg = ws.message;
+        setNameForm(msg.name);
+        setPictureURLForm(msg.pictureURL);
 
-          if (message.name.length > 0 && message.pictureURL.length > 0) {
-            setName(message.name);
-            setPictureURL(message.pictureURL);
-          }
-          setRequestState("idle");
-          return true;
-        } else {
-          return false;
+        if (msg.name.length > 0 && msg.pictureURL.length > 0) {
+          setName(msg.name);
+          setPictureURL(msg.pictureURL);
         }
-      },
-      [requestState, setName, setPictureURL]
-    )
-  );
+        setRequestState("idle");
+      }
+    }
 
-  useWebsocketMessage(
-    "action success",
-    useCallback(
-      (message) => {
-        if (
-          isServerActionSuccessMessage(message) &&
-          requestState === "awaitingSetResult" &&
-          message.actionType === "set player data"
-        ) {
-          setName(nameForm);
-          setPictureURL(pictureURLForm);
-          setResultFlag("success");
-          setRequestState("idle");
-          return true;
-        } else {
-          return false;
-        }
-      },
-      [nameForm, pictureURLForm, requestState, setName, setPictureURL]
-    )
-  );
-
-  useWebsocketMessage(
-    "action fail",
-    useCallback(
-      (message) => {
-        if (
-          isServerActionFailMessage(message) &&
-          requestState === "awaitingSetResult" &&
-          message.actionType == "set player data"
-        ) {
-          setResultFlag("failure");
-          setRequestState("idle");
-          setErrorMessage(message.reason);
-          return true;
-        } else {
-          return false;
-        }
-      },
-      [requestState]
-    )
-  );
+    if (requestState == "awaitingSetResult") {
+      if (
+        ws.message.type == "action success" &&
+        isServerActionSuccessMessage(ws.message) &&
+        ws.message.actionType == "set player data"
+      ) {
+        // Set flag for like successfully set
+        setName(nameForm);
+        setPictureURL(pictureURLForm);
+        setResultFlag("success");
+        setRequestState("idle");
+      } else if (
+        ws.message.type == "action fail" &&
+        isServerActionFailMessage(ws.message) &&
+        ws.message.actionType == "set player data"
+      ) {
+        setResultFlag("failure");
+        setRequestState("idle");
+        setErrorMessage(ws.message.reason);
+      }
+    }
+  }, [ws.message]);
 
   useEffect(() => {
     const msg: ClientMessage = {
