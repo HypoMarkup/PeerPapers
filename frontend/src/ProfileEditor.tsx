@@ -119,11 +119,13 @@ export function ProfileEditor({
   );
 
   useEffect(() => {
-    const msg: ClientMessage = {
-      type: "get player data",
-    };
-    ws.send(JSON.stringify(msg));
-    setRequestState("awaitingGetResult");
+    if (requestState == "uninitialised") {
+      const msg: ClientMessage = {
+        type: "get player data",
+      };
+      ws.send(JSON.stringify(msg));
+      setRequestState("awaitingGetResult");
+    }
   }, []);
 
   if (requestState != "idle") {

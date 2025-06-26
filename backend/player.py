@@ -62,6 +62,12 @@ class PlayerManager:
                     print("Player is already connected")
         return None
 
+    async def broadcast(self, message: str):
+        for player in self.players:
+            sock = player.get_sock()
+            if sock is not None:
+                await sock.send_text(message)
+
     def get_player(self, condition: Callable[[Player], bool]):
         for i in self.players:
             if condition(i):

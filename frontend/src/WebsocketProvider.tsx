@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { ServerMessage } from "./generated/message";
 import { isServerMessage } from "./generated/message.guard";
 import { Handshake } from "./Handshake";
-import { resetClient } from "./utililties";
+import { resetClient } from "./utilities";
 
 // Source:
 // https://ably.com/blog/websockets-react-tutorial
@@ -18,16 +18,18 @@ export const WebsocketContext = createContext<WebSocketInterface>({
   send: () => {},
 });
 
+type MessageHandlerFunction = (message: ServerMessage) => boolean;
+
 interface MessageHandler {
   messageType: ServerMessage["type"];
-  handler: (message: ServerMessage) => boolean; // returns true if handled
+  handler: MessageHandlerFunction; // returns true if handled
 }
 
 type iProps = { children?: ReactNode };
 
 export function useWebsocketMessage(
   messageType: ServerMessage["type"],
-  handler: (message: ServerMessage) => boolean
+  handler: MessageHandlerFunction
 ) {
   const ws = useContext(WebsocketContext);
 
@@ -45,12 +47,20 @@ export const WebsocketProvider = (props: iProps) => {
 
   const [message, setMessage] = useState<ServerMessage>();
 
-  const handlersRef = useRef<MessageHandler[]>([]);
+  const handlersRef = useRef<
+    Map<ServerMessage["type"], MessageHandlerFunction[]>
+  >(new Map());
 
   const registerHandler = (handler: MessageHandler) => {
-    handlersRef.current.push(handler);
+    let arr = handlersRef.current.get(handler.messageType);
+    if (arr !== undefined) {
+      arr.push(handler.handler);
+    } else {
+      arr = [handler.handler];
+      handlersRef.current.set(handler.messageType, arr);
+    }
     // Cleanup function
-    return () => handlersRef.current.splice(handlersRef.current.length - 1, 1);
+    return () => arr.splice(arr.length - 1, 1);
   };
 
   const processMessage = () => {
@@ -58,11 +68,10 @@ export const WebsocketProvider = (props: iProps) => {
 
     let wasHandled = false;
 
-    // Try each registered handler
-    for (const handler of handlersRef.current) {
-      if (handler.messageType === message.type) {
-        wasHandled = handler.handler(message);
-        if (wasHandled) break;
+    const arr = handlersRef.current.get(message.type);
+    if (arr !== undefined) {
+      for (let i = 0; i < arr.length; i++) {
+        wasHandled ||= arr[i](message);
       }
     }
 

@@ -4,7 +4,7 @@ import {
   WebsocketContext,
   type WebSocketInterface,
 } from "./WebsocketProvider";
-import { isLocalStorageEmpty, resetClient } from "./utililties";
+import { isLocalStorageEmpty, resetClient } from "./utilities";
 import type {
   ClientMessage,
   ClientReconnectMessage,

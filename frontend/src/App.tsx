@@ -1,6 +1,5 @@
-import { useContext, useEffect, useState } from "react";
+import { useState } from "react";
 import { ProfileEditor } from "./ProfileEditor";
-import { WebsocketContext } from "./WebsocketProvider";
 
 function App() {
   const [name, setName] = useState("");
