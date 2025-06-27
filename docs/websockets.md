@@ -63,3 +63,6 @@ function Example() {
   return <button onClick={() => ws.send("Hi")}>Click me</button>;
 }
 ```
+
+> [!NOTE]  
+> A common pattern is to send a message on component mount using `useEffect(func, [])`. React strict mode will run this twice, which will lead to your message being sent twice. For most messages this doesn't matter but for a stateful message like `initial connect` or `reconnect` this is an issue since attempting to connect when you're already connected leads to the server disconnecting the websocket. To handle this use a ref with an if statement in the `useEffect` to track whether you've sent a message and received a response. You can use this logic to prevent the message being sent a second time when you haven't received the response from the first message.
