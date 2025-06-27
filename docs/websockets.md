@@ -15,6 +15,8 @@ useWebsocketMessage(messageType, handler);
 - messageType: String indicating which message type you want to handle
 - handler: function which takes a `ServerMessage` object as a parameter and returns `true` or `false` depending on whether or not the message was handled
 
+The handler is run whenever the message arrives, not on rerender. The hook doesn't necessarily lead to a rerender but will if the handler modifies state.
+
 #### Example component
 
 ```tsx
@@ -44,7 +46,7 @@ function Example() {
 This component waits for a `uuid assignment` message. If it's uuid has not been set yet, it sets it to the uuid in the message, otherwise it throws an error.
 
 > [!IMPORTANT]
-> Notice how we wrapped the handler function in a useCallback and placed all the stateful variables (just `uuid`) we used in the dependency array. **This is not necessary but highly recommended**. useCallback memoizes (caches) the function instead of generating a new function on each render. It only generates a new function when the value of one of the stateful variables in the dependency array changes. If you omit stateful variables which you used, a stale (old value) of the variable will be used which can lead to bugs
+> Notice how we wrapped the handler function in a useCallback and placed all the stateful variables (just `uuid`) we used in the dependency array. **This is not necessary but highly recommended**. useCallback memoizes (caches) the function instead of generating a new function on each render. It only generates a new function when the value of one of the stateful variables in the dependency array changes. If you omit stateful variables which you used, a stale (old value) of the variable will be used which can lead to bugs. It is also recommended to place and stateful setters in the dependency array however since they're stable this rarely matters.
 
 ### How to send websocket messages from my component
 
