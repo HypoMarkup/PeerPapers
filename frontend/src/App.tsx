@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ProfileEditor } from "./ProfileEditor";
+import { Lobby } from "./Lobby";
 
 function App() {
   const [name, setName] = useState("");
@@ -9,6 +10,7 @@ function App() {
     <>
       <p>Connected</p>
       <ProfileEditor setName={setName} setPictureURL={setPictureURL} />
+      {name.length !== 0 && <Lobby name={name} />}
     </>
   );
 }
