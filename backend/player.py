@@ -11,7 +11,6 @@ class Player:
 
     name: str
     pictureURL: str
-    is_host: bool
 
     def __init__(self, sock: CommunicationMedium):
         self.uuid: str = self.generate_UUID()
@@ -19,7 +18,6 @@ class Player:
 
         self.name = ""
         self.pictureURL = ""
-        self.is_host = False
 
     def generate_UUID(self) -> str:
         # uuid4 is random
@@ -42,12 +40,18 @@ class Player:
 class PlayerManager:
     def __init__(self) -> None:
         self.players: list[Player] = []
+        self.__host: Optional[Player] = None
 
     def add_player(self, p: Player):
         self.players.append(p)
+        if self.__host == None:
+            self.__host = p
 
     def remove_player(self, p: Player):
         self.players.remove(p)
+
+        if p == self.__host:
+            self.__host = self.players[0]
 
     def reconnect_player_via_UUID(
         self, uuid: str, c: CommunicationMedium
@@ -79,3 +83,6 @@ class PlayerManager:
 
     def get_player_by_connection(self, c: CommunicationMedium):
         return self.get_player(lambda x: x.get_sock() == c)
+
+    def get_host(self):
+        return self.__host

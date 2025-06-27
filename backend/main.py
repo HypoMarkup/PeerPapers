@@ -43,7 +43,7 @@ async def glorious_main_loop():
                         name=x.name,
                         pictureURL=x.pictureURL,
                         isConnected=x.is_connected(),
-                        isHost=x.is_host,
+                        isHost=x == player_manager.get_host(),
                     ),
                     filter(
                         lambda x: len(x.name) != 0,
