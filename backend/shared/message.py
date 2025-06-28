@@ -8,9 +8,13 @@ from typing import Literal, List
 # Types which have a generic fail and success message
 actionTypes = Literal["set player data"]
 
+ClientMessageTypes = Literal[
+    "initial connect", "reconnect", "set player data", "get player data"
+]
+
 
 class ClientMessage(BaseModel):
-    type: Literal["initial connect", "reconnect", "set player data", "get player data"]
+    type: ClientMessageTypes
 
 
 class ClientConnectMessage(BaseModel):
@@ -33,19 +37,21 @@ class ClientSetPlayerDataMessage(BaseModel):
 # Server messages
 #
 
+ServerMessageTypes = Literal[
+    # Handshake start
+    "uuid assignment",
+    "successful reconnect",
+    "failed reconnect",
+    # Handshake end
+    "action success",
+    "action fail",
+    "send player data",
+    "players status",
+]
+
 
 class ServerMessage(BaseModel):
-    type: Literal[
-        # Handshake start
-        "uuid assignment",
-        "successful reconnect",
-        "failed reconnect",
-        # Handshake end
-        "action success",
-        "action fail",
-        "send player data",
-        "players status",
-    ]
+    type: ServerMessageTypes
 
 
 # Message to be used in cases where a client message can or success fail

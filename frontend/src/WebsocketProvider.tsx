@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import type { ServerMessage } from "./generated/message";
 import { isServerMessage } from "./generated/message.guard";
 import { Handshake } from "./Handshake";
-import { resetClient } from "./utilities";
 
 // Source:
 // https://ably.com/blog/websockets-react-tutorial
@@ -98,7 +97,6 @@ export const WebsocketProvider = (props: iProps) => {
     };
     socket.onclose = () => {
       setIsConnected(false);
-      resetClient();
     };
     socket.onmessage = (event) => {
       const m = JSON.parse(event.data);
@@ -112,9 +110,7 @@ export const WebsocketProvider = (props: iProps) => {
     ws.current = socket;
 
     return () => {
-      if (isConnected) {
-        socket.close();
-      }
+      socket.close();
     };
   }, []);
 

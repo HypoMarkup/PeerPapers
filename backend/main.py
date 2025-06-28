@@ -1,29 +1,24 @@
 from asyncio import create_task, sleep, CancelledError
 from contextlib import asynccontextmanager
+from typing import Callable, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from validators import is_valid_name
+from message_handlers import (
+    handle_get_player_data,
+    handle_initial_connect,
+    handle_reconnect,
+    handle_set_player_data,
+)
 from game_state import GameState
-from connectivity import ConnectionManager, WebsocketMedium
-from player import Player, PlayerManager
+from connectivity import CommunicationMedium, ConnectionManager, WebsocketMedium
+from player import Player
+from managers import player_manager, connection_manager, state
 from shared.message import (
+    ClientMessageTypes,
     PlayerStatus,
-    ServerActionFailMessage,
-    ServerActionSuccessMessage,
-    ServerFailedReconnectionMessage,
-    ClientReconnectMessage,
     ClientMessage,
     ServerPlayersStatusBroadcast,
-    ServerUUIDAssignmentMessage,
-    ServerMessage,
-    ServerSendPlayerDataMessage,
-    ClientSetPlayerDataMessage,
 )
 from pydantic import ValidationError
-
-connection_manager = ConnectionManager()
-player_manager = PlayerManager()
-
-state: GameState = GameState.Lobby
 
 
 # Server -> Clients
@@ -53,6 +48,7 @@ async def glorious_main_loop():
             ),
         )
 
+        print(connection_manager.active_connections)
         await connection_manager.broadcast(outgoing_msg.model_dump_json())
 
 
@@ -69,6 +65,25 @@ async def start_main_loop(app: FastAPI):
 
 app = FastAPI(lifespan=start_main_loop)
 
+unauthenticated_handlers: dict[
+    ClientMessageTypes,
+    Callable[
+        [str, Optional[Player], CommunicationMedium],
+        tuple[Optional[Player], Optional[str], Optional[int], Optional[str]],
+    ],
+] = {"initial connect": handle_initial_connect, "reconnect": handle_reconnect}
+
+authenticated_handlers: dict[
+    ClientMessageTypes,
+    Callable[
+        [str, Player],
+        tuple[Optional[str], Optional[int], Optional[str]],
+    ],
+] = {
+    "get player data": handle_get_player_data,
+    "set player data": handle_set_player_data,
+}
+
 
 # Client -> Server
 @app.websocket("/ws")
@@ -76,88 +91,34 @@ async def websocket_endpoint(ws: WebSocket):
     c = WebsocketMedium(ws)
     await connection_manager.connect(c)
     try:
-        p: Player | None = None
+        p: Optional[Player] = None
         while True:
             print(player_manager.players)
             data = await c.receive_text()
             incoming_msg = ClientMessage.model_validate_json(data)
-            match incoming_msg.type:
-                case "initial connect":
-                    if p != None:
-                        raise WebSocketDisconnect(code=1003, reason="Already connected")
-                    p = Player(c)
-                    player_manager.add_player(p)
-                    outgoing_msg = ServerUUIDAssignmentMessage(
-                        type="uuid assignment", uuid=p.uuid
+            if incoming_msg.type in unauthenticated_handlers:
+                p, outgoing_msg, code, reason = unauthenticated_handlers[
+                    incoming_msg.type
+                ](data, p, c)
+            else:
+                if p == None:
+                    outgoing_msg, code, reason = (
+                        None,
+                        3000,
+                        "Connection is not associated with a player",
                     )
-                    await connection_manager.send_personal_message(
-                        c, outgoing_msg.model_dump_json()
-                    )
-                case "reconnect":
-                    if p != None:
-                        raise WebSocketDisconnect(code=1003, reason="Already connected")
+                elif incoming_msg.type in authenticated_handlers:
+                    outgoing_msg, code, reason = authenticated_handlers[
+                        incoming_msg.type
+                    ](data, p)
+                else:
+                    outgoing_msg, code, reason = (None, 1002, "Unknown message type")
+            if outgoing_msg != None:
+                await connection_manager.send_personal_message(c, outgoing_msg)
+            if code != None and reason != None:
+                await c.close(code, reason)
+                raise WebSocketDisconnect(code=code, reason=reason)
 
-                    incoming_msg = ClientReconnectMessage.model_validate_json(data)
-                    p = player_manager.reconnect_player_via_UUID(incoming_msg.uuid, c)
-                    # TODO: Handle "already connected" and "never connected" separately
-                    #       Allows for different frontend response
-                    if p is not None:
-                        outgoing_msg = ServerMessage(type="successful reconnect")
-                        await connection_manager.send_personal_message(
-                            c, outgoing_msg.model_dump_json()
-                        )
-                    else:
-                        outgoing_msg = ServerFailedReconnectionMessage(
-                            type="failed reconnect",
-                            reason="invalid uuid",
-                            shouldReset=(state == GameState.Lobby),
-                        )
-                        await connection_manager.send_personal_message(
-                            c, outgoing_msg.model_dump_json()
-                        )
-                        raise WebSocketDisconnect(code=1003, reason="Invalid UUID")
-                case "get player data":
-                    if p == None:
-                        raise WebSocketDisconnect(code=1003, reason="Not connected")
-                    outgoing_msg = ServerSendPlayerDataMessage(
-                        type="send player data", name=p.name, pictureURL=p.pictureURL
-                    )
-
-                    await connection_manager.send_personal_message(
-                        c, outgoing_msg.model_dump_json()
-                    )
-                case "set player data":
-                    if p == None:
-                        raise WebSocketDisconnect(code=1003, reason="Not connected")
-
-                    incoming_msg = ClientSetPlayerDataMessage.model_validate_json(data)
-                    new_name = incoming_msg.name
-                    if (
-                        is_valid_name(new_name)
-                        and player_manager.get_player(lambda x: x.name == new_name)
-                        == None
-                    ):
-                        p.name = new_name
-                        p.pictureURL = incoming_msg.pictureURL
-                        outgoing_msg = ServerActionSuccessMessage(
-                            type="action success", actionType="set player data"
-                        )
-                        await connection_manager.send_personal_message(
-                            c, outgoing_msg.model_dump_json()
-                        )
-                    else:
-                        outgoing_msg = ServerActionFailMessage(
-                            type="action fail",
-                            actionType="set player data",
-                            reason="Invalid player data",
-                        )
-                        await connection_manager.send_personal_message(
-                            c, outgoing_msg.model_dump_json()
-                        )
-
-                case _:
-                    # What are doing
-                    raise WebSocketDisconnect(code=1002, reason="Invalid message type")
     except WebSocketDisconnect as e:
         print(e.code, e.reason)
     except ValidationError as e:
