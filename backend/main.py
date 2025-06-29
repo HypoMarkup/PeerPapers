@@ -9,7 +9,7 @@ from message_handlers import (
     handle_set_player_data,
 )
 from game_state import GameState
-from connectivity import CommunicationMedium, ConnectionManager, WebsocketMedium
+from connectivity import CommunicationMedium, WebsocketMedium
 from player import Player
 from managers import player_manager, connection_manager, state
 from shared.message import (

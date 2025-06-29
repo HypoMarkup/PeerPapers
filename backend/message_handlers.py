@@ -24,7 +24,7 @@ from shared.message import (
 # Parameters:
 # data: str, p: Optional[Player], c: CommunicationMedium
 # Return Tuple:
-# player: Optional[Player], message: Optional[str], code: Optional[int], reason: Optional[str]
+# p: Optional[Player], message: Optional[str], code: Optional[int], reason: Optional[str]
 
 # Authenticated
 # Parameters:
