@@ -21,7 +21,7 @@ The handler is run whenever the message arrives, not on rerender. The hook doesn
 
 ```tsx
 function Example() {
-  const [uuid, setUuid] = useState<String>("");
+  const [uuid, setUuid] = useState<string>("");
 
   useWebsocketMessage(
     "uuid assignment",
@@ -33,7 +33,9 @@ function Example() {
           } else {
             console.error("UUID is already set");
           }
+          return true;
         }
+        return false;
       },
       [uuid]
     )

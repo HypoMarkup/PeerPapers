@@ -1,9 +1,8 @@
 from typing import Optional
-
 from validators import is_valid_name
 from connectivity import CommunicationMedium
 from player import Player
-from managers import player_manager, connection_manager, state
+from managers import player_manager, state
 from game_state import GameState
 from shared.message import (
     ClientSetPlayerDataMessage,
@@ -101,9 +100,6 @@ def handle_get_player_data(
 def handle_set_player_data(
     data: str, p: Player
 ) -> tuple[Optional[str], Optional[int], Optional[str]]:
-    if p == None:
-        raise WebSocketDisconnect(code=1003, reason="Not connected")
-
     incoming_msg = ClientSetPlayerDataMessage.model_validate_json(data)
     new_name = incoming_msg.name
     if (

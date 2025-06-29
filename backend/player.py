@@ -51,7 +51,7 @@ class PlayerManager:
         self.players.remove(p)
 
         if p == self.__host:
-            self.__host = self.players[0]
+            self.__host = self.players[0] if len(self.players) != 0 else None
 
     async def broadcast(self, message: str):
         for player in self.players:

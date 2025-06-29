@@ -15,5 +15,5 @@
 
 # Message vs Broadcast
 
-- Messages are should be sent to one client
+- Messages should be sent to one client
 - Broadcast are intended to be sent to all clients or more than one client
