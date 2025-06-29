@@ -16,8 +16,10 @@ import {
 
 export function Handshake({
   completeHandshake,
+  setErrorMessage,
 }: {
   completeHandshake: () => void;
+  setErrorMessage: (message: string) => void;
 }) {
   const ws: WebSocketInterface = useContext(WebsocketContext);
 
@@ -44,7 +46,7 @@ export function Handshake({
 
   useWebsocketMessage("failed reconnect", (message) => {
     if (isServerFailedReconnectionMessage(message)) {
-      console.error(message);
+      setErrorMessage(message.reason);
       if (message.shouldReset) {
         resetClient();
       }

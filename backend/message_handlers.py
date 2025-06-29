@@ -39,7 +39,7 @@ from shared.message import (
 def handle_initial_connect(
     _: str, p: Optional[Player], c: CommunicationMedium
 ) -> tuple[Optional[Player], Optional[str], Optional[int], Optional[str]]:
-    if p != None:
+    if p is not None:
         return (None, "", 1003, "Already connected")
 
     p = Player(c)
@@ -51,27 +51,36 @@ def handle_initial_connect(
 def handle_reconnect(
     data: str, p: Optional[Player], c: CommunicationMedium
 ) -> tuple[Optional[Player], Optional[str], Optional[int], Optional[str]]:
-    if p != None:
+    if p is not None:
         return (None, "", 1003, "Already connected")
 
     incoming_msg = ClientReconnectMessage.model_validate_json(data)
-    p = player_manager.reconnect_player_via_UUID(incoming_msg.uuid, c)
-    # TODO: Handle "already connected" and "never connected" separately
-    #       Allows for different frontend response
-    if p is not None:
-        return (
-            p,
-            ServerMessage(type="successful reconnect").model_dump_json(),
-            None,
-            None,
-        )
-    else:
+    p = player_manager.get_player(lambda x: x.uuid == incoming_msg.uuid)
+
+    if p is None:
         outgoing_msg = ServerFailedReconnectionMessage(
             type="failed reconnect",
             reason="invalid uuid",
             shouldReset=(state == GameState.Lobby),
         )
-        return (None, outgoing_msg.model_dump_json(), 1003, "Invalid UUID")
+        return (None, outgoing_msg.model_dump_json(), 1003, "Invalid uuid")
+
+    if p.is_connected():
+        outgoing_msg = ServerFailedReconnectionMessage(
+            type="failed reconnect",
+            reason="already connected",
+            shouldReset=False,
+        )
+        return (None, outgoing_msg.model_dump_json(), 1003, "Already connected")
+
+    p.set_sock(c)
+
+    return (
+        p,
+        ServerMessage(type="successful reconnect").model_dump_json(),
+        None,
+        None,
+    )
 
 
 # Authenticated messages

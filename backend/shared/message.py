@@ -78,7 +78,7 @@ class ServerSuccessfulReconnectMessage(BaseModel):
 
 class ServerFailedReconnectionMessage(BaseModel):
     type: Literal["failed reconnect"]
-    reason: Literal["invalid uuid", "server full"]
+    reason: Literal["invalid uuid", "already connected", "server full"]
     shouldReset: bool
 
 

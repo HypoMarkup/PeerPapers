@@ -53,19 +53,6 @@ class PlayerManager:
         if p == self.__host:
             self.__host = self.players[0]
 
-    def reconnect_player_via_UUID(
-        self, uuid: str, c: CommunicationMedium
-    ) -> Optional[Player]:
-        for p in self.players:
-            if p.uuid == uuid:
-                if not p.is_connected():
-                    p.set_sock(c)
-                    return p
-                else:
-                    # TODO: Handle this
-                    print("Player is already connected")
-        return None
-
     async def broadcast(self, message: str):
         for player in self.players:
             sock = player.get_sock()

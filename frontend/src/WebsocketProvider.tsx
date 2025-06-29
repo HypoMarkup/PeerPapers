@@ -46,6 +46,8 @@ export const WebsocketProvider = (props: iProps) => {
 
   const [message, setMessage] = useState<ServerMessage>();
 
+  const [errorMessage, setErrorMessage] = useState<string>();
+
   const handlersRef = useRef<
     Map<ServerMessage["type"], MessageHandlerFunction[]>
   >(new Map());
@@ -114,6 +116,10 @@ export const WebsocketProvider = (props: iProps) => {
     };
   }, []);
 
+  if (errorMessage !== undefined && errorMessage.length != 0) {
+    return <p>{errorMessage}</p>;
+  }
+
   if (!isConnected || ws.current === null) {
     return <p>Connecting</p>;
   }
@@ -126,7 +132,10 @@ export const WebsocketProvider = (props: iProps) => {
   if (!isHandshakeComplete) {
     return (
       <WebsocketContext.Provider value={ret}>
-        <Handshake completeHandshake={() => setIsHandshakeComplete(true)} />
+        <Handshake
+          completeHandshake={() => setIsHandshakeComplete(true)}
+          setErrorMessage={setErrorMessage}
+        />
       </WebsocketContext.Provider>
     );
   }
