@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, createContext, useContext } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { ReactNode } from "react";
-import type { ServerMessage } from "./generated/message";
-import { isServerMessage } from "./generated/message.guard";
-import { Handshake } from "./Handshake";
+import type { ServerMessage } from "../generated/message";
+import { isServerMessage } from "../generated/message.guard";
+import { Handshake } from "../components/Handshake";
+import { WebsocketContext } from "./WebSocketContext";
 
 // Source:
 // https://ably.com/blog/websockets-react-tutorial
@@ -12,33 +13,14 @@ export interface WebSocketInterface {
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
 }
 
-export const WebsocketContext = createContext<WebSocketInterface>({
-  registerHandler: (_) => () => {},
-  send: () => {},
-});
+export type MessageHandlerFunction = (message: ServerMessage) => boolean;
 
-type MessageHandlerFunction = (message: ServerMessage) => boolean;
-
-interface MessageHandler {
+export interface MessageHandler {
   messageType: ServerMessage["type"];
   handler: MessageHandlerFunction; // returns true if handled
 }
 
 type iProps = { children?: ReactNode };
-
-export function useWebsocketMessage(
-  messageType: ServerMessage["type"],
-  handler: MessageHandlerFunction
-) {
-  const ws = useContext(WebsocketContext);
-
-  useEffect(() => {
-    return ws.registerHandler({
-      messageType: messageType,
-      handler: handler,
-    });
-  }, [handler]);
-}
 
 export const WebsocketProvider = (props: iProps) => {
   const [isConnected, setIsConnected] = useState(false);

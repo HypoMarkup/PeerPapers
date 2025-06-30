@@ -101,28 +101,38 @@ def handle_set_player_data(
     data: str, p: Player
 ) -> tuple[Optional[str], Optional[int], Optional[str]]:
     incoming_msg = ClientSetPlayerDataMessage.model_validate_json(data)
-    new_name = incoming_msg.name
-    if (
-        is_valid_name(new_name)
-        and player_manager.get_player(lambda x: x.name == new_name) == None
-    ):
-        p.name = new_name
-        p.pictureURL = incoming_msg.pictureURL
+    new_name = incoming_msg.name.lower()
+
+    player_with_this_name = player_manager.get_player(lambda x: x.name == new_name)
+
+    if not is_valid_name(new_name):
         return (
-            ServerActionSuccessMessage(
-                type="action success", actionType="set player data"
+            ServerActionFailMessage(
+                type="action fail",
+                actionType="set player data",
+                reason="This name is not valid",
             ).model_dump_json(),
             None,
             None,
         )
 
-    else:
+    if player_with_this_name != None and player_with_this_name != p:
         return (
             ServerActionFailMessage(
                 type="action fail",
                 actionType="set player data",
-                reason="Invalid player data",
+                reason="This name is taken",
             ).model_dump_json(),
             None,
             None,
         )
+
+    p.name = new_name
+    p.pictureURL = incoming_msg.pictureURL
+    return (
+        ServerActionSuccessMessage(
+            type="action success", actionType="set player data"
+        ).model_dump_json(),
+        None,
+        None,
+    )

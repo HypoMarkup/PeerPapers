@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ProfileEditor } from "./ProfileEditor";
-import { Lobby } from "./Lobby";
+import { ProfileEditor } from "./components/ProfileEditor";
+import { Lobby } from "./components/Lobby";
 
 function App() {
   const [name, setName] = useState("");

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useWebsocketMessage } from "./WebsocketProvider";
-import type { PlayerStatus } from "./generated/message";
-import { isServerPlayersStatusBroadcast } from "./generated/message.guard";
+import { useWebsocketMessage } from "../hooks/useWebsocketMessage";
+import type { PlayerStatus } from "../generated/message";
+import { isServerPlayersStatusBroadcast } from "../generated/message.guard";
 
 export function Lobby({ name }: { name: string }) {
   const [playerStatus, setPlayerStatus] = useState<PlayerStatus[]>([]);
@@ -21,7 +21,11 @@ export function Lobby({ name }: { name: string }) {
   const list = playerStatus.map((player) => (
     <li key={player.name}>
       {player.isHost ? "👑" : "🔵"}{" "}
-      <img width={20} height={20} src={player.pictureURL}></img>
+      <img
+        width={20}
+        height={20}
+        src={player.pictureURL.length !== 0 ? player.pictureURL : undefined}
+      ></img>
       {player.name == name ? (
         <strong>{player.name}</strong>
       ) : (

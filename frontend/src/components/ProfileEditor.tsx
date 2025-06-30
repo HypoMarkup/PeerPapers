@@ -12,17 +12,15 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import type {
   ClientMessage,
   ClientSetPlayerDataMessage,
-} from "./generated/message";
-import {
-  useWebsocketMessage,
-  WebsocketContext,
-  type WebSocketInterface,
-} from "./WebsocketProvider";
+} from "../generated/message";
+import { useWebsocketMessage } from "../hooks/useWebsocketMessage";
+import { WebsocketContext } from "../contexts/WebSocketContext";
 import {
   isServerActionFailMessage,
   isServerActionSuccessMessage,
   isServerSendPlayerDataMessage,
-} from "./generated/message.guard";
+} from "../generated/message.guard";
+import type { WebSocketInterface } from "../contexts/WebsocketProvider";
 
 // Enums bad or something "Enums are non erasable TypeScript code"
 type RequestState =
@@ -139,7 +137,7 @@ export function ProfileEditor({
         <input
           type="text"
           value={nameForm}
-          onChange={(e) => setNameForm(e.target.value)}
+          onChange={(e) => setNameForm(e.target.value.toLowerCase())}
         ></input>
       </form>
       <form>
@@ -167,7 +165,7 @@ export function ProfileEditor({
       {resultFlag == "failure" && <p>{errorMessage}</p>}
       <h2>Preview</h2>
       <img
-        src={pictureURLForm.length != 0 ? pictureURLForm : undefined}
+        src={pictureURLForm.length !== 0 ? pictureURLForm : undefined}
         width={200}
         height={200}
       ></img>

@@ -1,18 +1,16 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import {
-  useWebsocketMessage,
-  WebsocketContext,
-  type WebSocketInterface,
-} from "./WebsocketProvider";
-import { isLocalStorageEmpty, resetClient } from "./utilities";
+import { useWebsocketMessage } from "../hooks/useWebsocketMessage";
+import { WebsocketContext } from "../contexts/WebSocketContext";
+import { isLocalStorageEmpty, resetClient } from "../helpers/utilities";
 import type {
   ClientMessage,
   ClientReconnectMessage,
-} from "./generated/message";
+} from "../generated/message";
 import {
   isServerFailedReconnectionMessage,
   isServerUUIDAssignmentMessage,
-} from "./generated/message.guard";
+} from "../generated/message.guard";
+import type { WebSocketInterface } from "../contexts/WebsocketProvider";
 
 export function Handshake({
   completeHandshake,
