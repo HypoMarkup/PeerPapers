@@ -23,6 +23,10 @@ class CommunicationMedium(ABC):
     def receive_text(self) -> Coroutine[Any, Any, str]:
         pass
 
+    @abstractmethod
+    def close(self) -> Coroutine[Any, Any, None]:
+        pass
+
 
 class WebsocketMedium(CommunicationMedium):
     def __init__(self, ws: WebSocket):
@@ -40,6 +44,11 @@ class WebsocketMedium(CommunicationMedium):
 
     def receive_text(self) -> Coroutine[Any, Any, str]:
         return self.__ws.receive_text()
+
+    def close(
+        self, code: int = 1000, reason: Optional[str] = None
+    ) -> Coroutine[Any, Any, None]:
+        return self.__ws.close(code, reason)
 
 
 class ConnectionManager:
