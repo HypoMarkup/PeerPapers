@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useWebsocketMessage } from "../hooks/useWebsocketMessage";
 import type { PlayerStatus } from "../generated/message";
 import { isServerPlayersStatusBroadcast } from "../generated/message.guard";
@@ -6,13 +6,19 @@ import { isServerPlayersStatusBroadcast } from "../generated/message.guard";
 export function Lobby({ name }: { name: string }) {
   const [playerStatus, setPlayerStatus] = useState<PlayerStatus[]>([]);
 
-  useWebsocketMessage("players status", (message) => {
-    if (isServerPlayersStatusBroadcast(message)) {
-      setPlayerStatus(message.status);
-      return true;
-    }
-    return false;
-  });
+  useWebsocketMessage(
+    "players status",
+    useCallback(
+      (message) => {
+        if (isServerPlayersStatusBroadcast(message)) {
+          setPlayerStatus(message.status);
+          return true;
+        }
+        return false;
+      },
+      [setPlayerStatus]
+    )
+  );
 
   if (playerStatus.length === 0) {
     return <>Loading</>;

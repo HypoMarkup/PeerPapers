@@ -6,14 +6,14 @@
 
 Use the `useWebsocketMessage` hook!
 
-#### Api
+#### API
 
 ```tsx
 useWebsocketMessage(messageType, handler);
 ```
 
 - messageType: String indicating which message type you want to handle
-- handler: function which takes a `ServerMessage` object as a parameter and returns `true` or `false` depending on whether or not the message was handled
+- handler: function which takes a `ServerMessage` object as a parameter and returns nothing
 
 The handler is run whenever the message arrives, not on rerender. The hook doesn't necessarily lead to a rerender but will if the handler modifies state.
 
@@ -33,9 +33,7 @@ function Example() {
           } else {
             console.error("UUID is already set");
           }
-          return true;
         }
-        return false;
       },
       [uuid]
     )

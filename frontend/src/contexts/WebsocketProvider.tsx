@@ -13,7 +13,7 @@ export interface WebSocketInterface {
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
 }
 
-export type MessageHandlerFunction = (message: ServerMessage) => boolean;
+export type MessageHandlerFunction = (message: ServerMessage) => void;
 
 export interface MessageHandler {
   messageType: ServerMessage["type"];
@@ -43,23 +43,20 @@ export const WebsocketProvider = (props: iProps) => {
       handlersRef.current.set(handler.messageType, arr);
     }
     // Cleanup function
-    return () => arr.splice(arr.length - 1, 1);
+    return () => {
+      const idx = arr.indexOf(handler.handler);
+      if (idx !== -1) arr.splice(idx, 1);
+    };
   };
 
   const processMessage = () => {
     if (message === undefined) return;
 
-    let wasHandled = false;
-
     const arr = handlersRef.current.get(message.type);
     if (arr !== undefined) {
       for (let i = 0; i < arr.length; i++) {
-        wasHandled ||= arr[i](message);
+        arr[i](message);
       }
-    }
-
-    if (!wasHandled) {
-      console.warn(`No handler for message: ${message.type}`);
     }
   };
 
