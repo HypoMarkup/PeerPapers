@@ -1,15 +1,23 @@
 from pydantic import BaseModel
 from typing import Literal, List
 
+from enum import Enum
+
+
+class ServerState(Enum):
+    LOBBY_NOT_READY = "LOBBY_NOT_READY"
+    LOBBY_READY = "LOBBY_READY"
+
+
 #
 # Client messages
 #
 
 # Types which have a generic fail and success message
-actionTypes = Literal["set player data"]
+actionTypes = Literal["set player data", "host set pdf"]
 
 ClientMessageTypes = Literal[
-    "initial connect", "reconnect", "set player data", "get player data"
+    "initial connect", "reconnect", "set player data", "get player data", "host set pdf"
 ]
 
 
@@ -31,6 +39,11 @@ class ClientSetPlayerDataMessage(BaseModel):
 
     name: str
     pictureURL: str
+
+
+class ClientHostSetPDF(BaseModel):
+    type: Literal["host set pdf"]
+    base64PDF: str  # Base64
 
 
 #
@@ -99,3 +112,4 @@ class PlayerStatus(BaseModel):
 class ServerPlayersStatusBroadcast(BaseModel):
     type: Literal["players status"]
     status: List[PlayerStatus]
+    state: ServerState

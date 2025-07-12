@@ -2,8 +2,7 @@ from typing import Optional
 from validators import is_valid_name
 from connectivity import CommunicationMedium
 from player import Player
-from managers import player_manager, state
-from game_state import GameState
+from managers import player_manager, state, base64PDF
 from shared.message import (
     ClientSetPlayerDataMessage,
     ServerActionFailMessage,
@@ -13,9 +12,13 @@ from shared.message import (
     ClientReconnectMessage,
     ServerMessage,
     ServerFailedReconnectionMessage,
+    ClientHostSetPDF,
+    ServerState,
 )
+from helper import isStateLobby
 
 # Authenticated messages are messages which can only be made by clients with a player object
+# Host messages are authenticated messages which can only be made by the host
 
 # Every handler should follow the following rules
 
@@ -25,7 +28,7 @@ from shared.message import (
 # Return Tuple:
 # p: Optional[Player], message: Optional[str], code: Optional[int], reason: Optional[str]
 
-# Authenticated
+# Authenticated + Host
 # Parameters:
 # data: str, p: Player
 # Return Tuple:
@@ -60,7 +63,7 @@ def handle_reconnect(
         outgoing_msg = ServerFailedReconnectionMessage(
             type="failed reconnect",
             reason="invalid uuid",
-            shouldReset=(state == GameState.Lobby),
+            shouldReset=(isStateLobby(state)),
         )
         return (None, outgoing_msg.model_dump_json(), 1003, "Invalid uuid")
 
@@ -132,6 +135,29 @@ def handle_set_player_data(
     return (
         ServerActionSuccessMessage(
             type="action success", actionType="set player data"
+        ).model_dump_json(),
+        None,
+        None,
+    )
+
+
+# Host messages
+
+
+def handle_host_set_PDF(
+    data: str, _: Player
+) -> tuple[Optional[str], Optional[int], Optional[str]]:
+    incoming_msg = ClientHostSetPDF.model_validate_json(data)
+
+    # TODO: Validate pdf base64
+    global base64PDF
+    base64PDF = incoming_msg.base64PDF
+
+    print(base64PDF)
+
+    return (
+        ServerActionSuccessMessage(
+            type="action success", actionType="host set pdf"
         ).model_dump_json(),
         None,
         None,

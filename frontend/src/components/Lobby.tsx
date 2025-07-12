@@ -12,9 +12,7 @@ export function Lobby({ name }: { name: string }) {
       (message) => {
         if (isServerPlayersStatusBroadcast(message)) {
           setPlayerStatus(message.status);
-          return true;
         }
-        return false;
       },
       [setPlayerStatus]
     )

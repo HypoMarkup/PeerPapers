@@ -64,9 +64,6 @@ export function ProfileEditor({
             setPictureURL(message.pictureURL);
           }
           setRequestState("idle");
-          return true;
-        } else {
-          return false;
         }
       },
       [requestState, setName, setPictureURL]
@@ -86,9 +83,6 @@ export function ProfileEditor({
           setPictureURL(pictureURLForm);
           setResultFlag("success");
           setRequestState("idle");
-          return true;
-        } else {
-          return false;
         }
       },
       [nameForm, pictureURLForm, requestState, setName, setPictureURL]
@@ -107,9 +101,6 @@ export function ProfileEditor({
           setResultFlag("failure");
           setRequestState("idle");
           setErrorMessage(message.reason);
-          return true;
-        } else {
-          return false;
         }
       },
       [requestState]

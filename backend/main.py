@@ -7,8 +7,8 @@ from message_handlers import (
     handle_initial_connect,
     handle_reconnect,
     handle_set_player_data,
+    handle_host_set_PDF,
 )
-from game_state import GameState
 from connectivity import CommunicationMedium, WebsocketMedium
 from player import Player
 from managers import player_manager, connection_manager, state
@@ -17,8 +17,10 @@ from shared.message import (
     PlayerStatus,
     ClientMessage,
     ServerPlayersStatusBroadcast,
+    ServerState,
 )
 from pydantic import ValidationError
+from helper import isStateLobby
 
 
 # Server -> Clients
@@ -27,7 +29,7 @@ async def glorious_main_loop():
         # All game logic goes here
         await sleep(5)
 
-        if state == GameState.Lobby:
+        if isStateLobby(state):
             player_manager.filter_players(lambda x: x.is_connected())
 
         outgoing_msg: ServerPlayersStatusBroadcast = ServerPlayersStatusBroadcast(
@@ -46,6 +48,7 @@ async def glorious_main_loop():
                     ),
                 )
             ),
+            state=state,
         )
 
         print(connection_manager.active_connections)
@@ -84,6 +87,16 @@ authenticated_handlers: dict[
     "set player data": handle_set_player_data,
 }
 
+host_handlers: dict[
+    ClientMessageTypes,
+    Callable[
+        [str, Player],
+        tuple[Optional[str], Optional[int], Optional[str]],
+    ],
+] = {
+    "host set pdf": handle_host_set_PDF,
+}
+
 
 # Client -> Server
 @app.websocket("/ws")
@@ -111,6 +124,17 @@ async def websocket_endpoint(ws: WebSocket):
                     outgoing_msg, code, reason = authenticated_handlers[
                         incoming_msg.type
                     ](data, p)
+                elif incoming_msg.type in host_handlers:
+                    if player_manager.get_host == p:
+                        outgoing_msg, code, reason = host_handlers[incoming_msg.type](
+                            data, p
+                        )
+                    else:
+                        outgoing_msg, code, reason = (
+                            None,
+                            3000,
+                            "Player is not the host",
+                        )
                 else:
                     outgoing_msg, code, reason = (None, 1002, "Unknown message type")
             if outgoing_msg != None:
@@ -128,7 +152,7 @@ async def websocket_endpoint(ws: WebSocket):
         connection_manager.disconnect(c)
 
         # Reconnection not allowed in lobby
-        if state == GameState.Lobby:
+        if isStateLobby(state):
             p = player_manager.get_player_by_connection(c)
             if p is not None:
                 player_manager.remove_player(p)

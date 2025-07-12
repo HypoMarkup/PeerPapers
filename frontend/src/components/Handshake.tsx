@@ -31,15 +31,11 @@ export function Handshake({
     if (isServerUUIDAssignmentMessage(message) && !isReconnecting) {
       localStorage["uuid"] = message.uuid;
       completeHandshake();
-      return true;
-    } else {
-      return false;
     }
   });
 
   useWebsocketMessage("successful reconnect", (_) => {
     completeHandshake();
-    return true;
   });
 
   useWebsocketMessage("failed reconnect", (message) => {
@@ -48,9 +44,7 @@ export function Handshake({
       if (message.shouldReset) {
         resetClient();
       }
-      return true;
     }
-    return false;
   });
 
   useEffect(() => {

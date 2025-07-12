@@ -1,9 +1,12 @@
 from connectivity import ConnectionManager
-from game_state import GameState
 from player import PlayerManager
+from shared.message import ServerState
+from typing import Optional
 
 
 connection_manager = ConnectionManager()
 player_manager = PlayerManager()
 
-state: GameState = GameState.Lobby
+state: ServerState = ServerState.LOBBY_NOT_READY
+
+base64PDF: Optional[str] = None
