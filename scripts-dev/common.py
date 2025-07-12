@@ -32,13 +32,13 @@ venv_binaries = (
 # Dependencies
 #
 
-dep_names = ["node", "npm", "python", "pip", "virtualenv"]
+dep_names = ["node", "npm", "python3", "pip3", "virtualenv"]
 where = list(map(lambda x: which(x), dep_names))
 is_installed = list(map(lambda x: x is not None, where))
 if not all(is_installed):
     print("Missing dependencies")
     print(
-        f"Install: {",".join([i[0] for i in zip(dep_names, is_installed) if not i[1]])}"
+        f"Install: {','.join([i[0] for i in zip(dep_names, is_installed) if not i[1]])}"
     )
     exit(1)
 
@@ -48,8 +48,8 @@ node_bin = deps["node"]
 
 npm_bin = deps["npm"]
 
-python_bin = deps["python"]
+python_bin = deps["python3"]
 
-pip_bin = deps["pip"]
+pip_bin = deps["pip3"]
 
 virtualenv_bin = deps["virtualenv"]
