@@ -125,7 +125,7 @@ async def websocket_endpoint(ws: WebSocket):
                         incoming_msg.type
                     ](data, p)
                 elif incoming_msg.type in host_handlers:
-                    if player_manager.get_host == p:
+                    if player_manager.get_host() == p:
                         outgoing_msg, code, reason = host_handlers[incoming_msg.type](
                             data, p
                         )

@@ -153,8 +153,6 @@ def handle_host_set_PDF(
     global base64PDF
     base64PDF = incoming_msg.base64PDF
 
-    print(base64PDF)
-
     return (
         ServerActionSuccessMessage(
             type="action success", actionType="host set pdf"
