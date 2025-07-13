@@ -2,7 +2,7 @@ from typing import Optional
 from validators import is_valid_name
 from connectivity import CommunicationMedium
 from player import Player
-from managers import player_manager, state, base64PDF
+from managers import player_manager, state_manager, content_manager
 from shared.message import (
     ClientSetPlayerDataMessage,
     ServerActionFailMessage,
@@ -63,7 +63,7 @@ def handle_reconnect(
         outgoing_msg = ServerFailedReconnectionMessage(
             type="failed reconnect",
             reason="invalid uuid",
-            shouldReset=(isStateLobby(state)),
+            shouldReset=(isStateLobby(state_manager.get_state())),
         )
         return (None, outgoing_msg.model_dump_json(), 1003, "Invalid uuid")
 
@@ -150,8 +150,9 @@ def handle_host_set_PDF(
     incoming_msg = ClientHostSetPDF.model_validate_json(data)
 
     # TODO: Validate pdf base64
-    global base64PDF
-    base64PDF = incoming_msg.base64PDF
+    content_manager.set_pdf(incoming_msg.base64PDF)
+
+    state_manager.transition_pdf_submitted()
 
     return (
         ServerActionSuccessMessage(

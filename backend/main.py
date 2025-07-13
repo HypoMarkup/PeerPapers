@@ -11,13 +11,12 @@ from message_handlers import (
 )
 from connectivity import CommunicationMedium, WebsocketMedium
 from player import Player
-from managers import player_manager, connection_manager, state
+from managers import player_manager, connection_manager, state_manager
 from shared.message import (
     ClientMessageTypes,
     PlayerStatus,
     ClientMessage,
     ServerPlayersStatusBroadcast,
-    ServerState,
 )
 from pydantic import ValidationError
 from helper import isStateLobby
@@ -29,7 +28,7 @@ async def glorious_main_loop():
         # All game logic goes here
         await sleep(5)
 
-        if isStateLobby(state):
+        if isStateLobby(state_manager.get_state()):
             player_manager.filter_players(lambda x: x.is_connected())
 
         outgoing_msg: ServerPlayersStatusBroadcast = ServerPlayersStatusBroadcast(
@@ -48,10 +47,10 @@ async def glorious_main_loop():
                     ),
                 )
             ),
-            state=state,
+            state=state_manager.get_state(),
         )
 
-        print(connection_manager.active_connections)
+        print(connection_manager.active_connections, state_manager.get_state())
         await connection_manager.broadcast(outgoing_msg.model_dump_json())
 
 
@@ -152,7 +151,7 @@ async def websocket_endpoint(ws: WebSocket):
         connection_manager.disconnect(c)
 
         # Reconnection not allowed in lobby
-        if isStateLobby(state):
+        if isStateLobby(state_manager.get_state()):
             p = player_manager.get_player_by_connection(c)
             if p is not None:
                 player_manager.remove_player(p)

@@ -5,7 +5,10 @@ import type { WebSocketInterface } from "../contexts/WebsocketProvider";
 import { WebsocketContext } from "../contexts/WebSocketContext";
 import type { ClientHostSetPDF } from "../generated/message";
 import { useWebsocketMessage } from "../hooks/useWebsocketMessage";
-import { isServerActionFailMessage, isServerActionSuccessMessage } from "../generated/message.guard";
+import {
+  isServerActionFailMessage,
+  isServerActionSuccessMessage,
+} from "../generated/message.guard";
 
 export function HostLobby() {
   const [file, setFile] = useState<File | null>(null);
@@ -14,24 +17,30 @@ export function HostLobby() {
 
   useWebsocketMessage(
     "action success",
-    useCallback((message) => {
-      if (isServerActionSuccessMessage(message)) {
-        if (message.actionType == "host set pdf") {
-          setStatusMessage("Successfully set PDF");
+    useCallback(
+      (message) => {
+        if (isServerActionSuccessMessage(message)) {
+          if (message.actionType == "host set pdf") {
+            setStatusMessage("Successfully set PDF");
+          }
         }
-      }
-    }, [setStatusMessage])
+      },
+      [setStatusMessage]
+    )
   );
 
   useWebsocketMessage(
     "action fail",
-    useCallback((message) => {
-      if (isServerActionFailMessage(message)) {
-        if (message.actionType == "host set pdf") {
-          setStatusMessage(message.reason);
+    useCallback(
+      (message) => {
+        if (isServerActionFailMessage(message)) {
+          if (message.actionType == "host set pdf") {
+            setStatusMessage(message.reason);
+          }
         }
-      }
-    }, [setStatusMessage])
+      },
+      [setStatusMessage]
+    )
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +63,7 @@ export function HostLobby() {
 
   return (
     <>
+      {statusMessage.length !== 0 && <p>{statusMessage}</p>}
       <input id="file" type="file" accept=".pdf" onChange={handleFileChange} />
       {file && (
         <section>

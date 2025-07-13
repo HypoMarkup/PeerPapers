@@ -43,7 +43,7 @@ class ClientSetPlayerDataMessage(BaseModel):
 
 class ClientHostSetPDF(BaseModel):
     type: Literal["host set pdf"]
-    base64PDF: str  # Base64
+    base64PDF: str
 
 
 #
@@ -60,6 +60,7 @@ ServerMessageTypes = Literal[
     "action fail",
     "send player data",
     "players status",
+    "pdf",
 ]
 
 
@@ -109,7 +110,15 @@ class PlayerStatus(BaseModel):
     isHost: bool
 
 
+# Broadcast Messages
+
+
 class ServerPlayersStatusBroadcast(BaseModel):
     type: Literal["players status"]
     status: List[PlayerStatus]
     state: ServerState
+
+
+class ServerPDFBroadcast(BaseModel):
+    type: Literal["pdf"]
+    base64PDF: str

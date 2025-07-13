@@ -9,6 +9,7 @@ function App() {
   const [name, setName] = useState("");
   const [pictureURL, setPictureURL] = useState("");
   const [isHost, setIsHost] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useWebsocketMessage(
     "players status",
@@ -23,6 +24,7 @@ function App() {
             // have the same name which should be impossible
             console.assert(player.length === 0);
           }
+          setIsReady(message.state === "LOBBY_READY");
         }
       },
       [setIsHost, name]
@@ -31,7 +33,7 @@ function App() {
 
   return (
     <>
-      <p>Connected</p>
+      <p>Connected | {isReady ? "Ready" : "Not ready"}</p>
       <ProfileEditor setName={setName} setPictureURL={setPictureURL} />
       {name.length !== 0 && <Lobby name={name} />}
       {isHost && <HostLobby />}
