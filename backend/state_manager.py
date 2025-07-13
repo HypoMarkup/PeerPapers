@@ -13,5 +13,10 @@ class StateManager:
 
     def transition_pdf_submitted(self):
         if not isStateLobby(self.__state):
-            raise RuntimeError("Incorrect transition")
+            raise RuntimeError("Can't set pdf outside of lobby")
         self.__state = ServerState.LOBBY_READY
+
+    def start(self):
+        if self.__state != ServerState.LOBBY_READY:
+            raise RuntimeError("Can't start if Lobby is not ready")
+        self.__state = ServerState.QUESTION

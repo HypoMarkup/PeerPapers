@@ -151,13 +151,35 @@ def handle_host_set_PDF(
 
     # TODO: Validate pdf base64
     content_manager.set_pdf(incoming_msg.base64PDF)
+    content_manager.set_number_of_questions(incoming_msg.numberOfQuestions)
 
-    state_manager.transition_pdf_submitted()
+    try:
+        state_manager.transition_pdf_submitted()
 
-    return (
-        ServerActionSuccessMessage(
-            type="action success", actionType="host set pdf"
-        ).model_dump_json(),
-        None,
-        None,
-    )
+        return (
+            ServerActionSuccessMessage(
+                type="action success", actionType="host set pdf"
+            ).model_dump_json(),
+            None,
+            None,
+        )
+    except RuntimeError as e:
+        return (
+            None,
+            1008,
+            str(e),
+        )
+
+
+def handle_host_start(
+    data: str, _: Player
+) -> tuple[Optional[str], Optional[int], Optional[str]]:
+    try:
+        state_manager.start()
+        return (None, None, None)
+    except RuntimeError as e:
+        return (
+            None,
+            1008,
+            str(e),
+        )

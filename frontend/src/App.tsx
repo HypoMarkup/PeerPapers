@@ -2,14 +2,18 @@ import { useCallback, useState } from "react";
 import { ProfileEditor } from "./components/ProfileEditor";
 import { Lobby } from "./components/Lobby";
 import { useWebsocketMessage } from "./hooks/useWebsocketMessage";
-import { isServerPlayersStatusBroadcast } from "./generated/message.guard";
+import {
+  isServerPlayersStatusBroadcast,
+  isServerStateBroadcast,
+} from "./generated/message.guard";
 import { HostLobby } from "./components/HostLobby";
+import type { ServerState } from "./generated/message";
 
 function App() {
   const [name, setName] = useState("");
   const [pictureURL, setPictureURL] = useState("");
   const [isHost, setIsHost] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  const [state, setState] = useState<ServerState>("LOBBY_NOT_READY");
 
   useWebsocketMessage(
     "players status",
@@ -24,21 +28,33 @@ function App() {
             // have the same name which should be impossible
             console.assert(player.length === 0);
           }
-          setIsReady(message.state === "LOBBY_READY");
         }
       },
       [setIsHost, name]
     )
   );
 
-  return (
-    <>
-      <p>Connected | {isReady ? "Ready" : "Not ready"}</p>
-      <ProfileEditor setName={setName} setPictureURL={setPictureURL} />
-      {name.length !== 0 && <Lobby name={name} />}
-      {isHost && <HostLobby />}
-    </>
+  useWebsocketMessage(
+    "state",
+    useCallback((message) => {
+      if (isServerStateBroadcast(message)) {
+        setState(message.state);
+      }
+    }, [])
   );
+
+  if (state === "LOBBY_NOT_READY" || state === "LOBBY_READY") {
+    return (
+      <>
+        <p>Connected | {state === "LOBBY_READY" ? "Ready" : "Not ready"}</p>
+        <ProfileEditor setName={setName} setPictureURL={setPictureURL} />
+        {name.length !== 0 && <Lobby name={name} />}
+        {isHost && <HostLobby isReady={state === "LOBBY_READY"} />}
+      </>
+    );
+  } else {
+    return <p>We made it to the moon</p>;
+  }
 }
 
 export default App;

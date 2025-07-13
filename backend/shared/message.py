@@ -7,6 +7,7 @@ from enum import Enum
 class ServerState(Enum):
     LOBBY_NOT_READY = "LOBBY_NOT_READY"
     LOBBY_READY = "LOBBY_READY"
+    QUESTION = "QUESTION"
 
 
 #
@@ -17,7 +18,12 @@ class ServerState(Enum):
 actionTypes = Literal["set player data", "host set pdf"]
 
 ClientMessageTypes = Literal[
-    "initial connect", "reconnect", "set player data", "get player data", "host set pdf"
+    "initial connect",
+    "reconnect",
+    "set player data",
+    "get player data",
+    "host set pdf",
+    "host start",
 ]
 
 
@@ -44,6 +50,7 @@ class ClientSetPlayerDataMessage(BaseModel):
 class ClientHostSetPDF(BaseModel):
     type: Literal["host set pdf"]
     base64PDF: str
+    numberOfQuestions: int
 
 
 #
@@ -61,6 +68,7 @@ ServerMessageTypes = Literal[
     "send player data",
     "players status",
     "pdf",
+    "state",
 ]
 
 
@@ -116,6 +124,10 @@ class PlayerStatus(BaseModel):
 class ServerPlayersStatusBroadcast(BaseModel):
     type: Literal["players status"]
     status: List[PlayerStatus]
+
+
+class ServerStateBroadcast(BaseModel):
+    type: Literal["state"]
     state: ServerState
 
 

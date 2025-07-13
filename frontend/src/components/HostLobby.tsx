@@ -3,17 +3,18 @@ import React, { useCallback, useContext, useState } from "react";
 import { getBase64 } from "../helpers/utilities";
 import type { WebSocketInterface } from "../contexts/WebsocketProvider";
 import { WebsocketContext } from "../contexts/WebSocketContext";
-import type { ClientHostSetPDF } from "../generated/message";
+import type { ClientHostSetPDF, ClientMessage } from "../generated/message";
 import { useWebsocketMessage } from "../hooks/useWebsocketMessage";
 import {
   isServerActionFailMessage,
   isServerActionSuccessMessage,
 } from "../generated/message.guard";
 
-export function HostLobby() {
+export function HostLobby({ isReady }: { isReady: boolean }) {
   const [file, setFile] = useState<File | null>(null);
   const ws: WebSocketInterface = useContext(WebsocketContext);
   const [statusMessage, setStatusMessage] = useState("");
+  const [numberOfQuestions, setNumberOfQuestions] = useState(0);
 
   useWebsocketMessage(
     "action success",
@@ -50,11 +51,12 @@ export function HostLobby() {
   };
 
   const handleUpload = async () => {
-    if (file) {
+    if (file && numberOfQuestions > 0) {
       getBase64(file).then((base64PDF) => {
         const message: ClientHostSetPDF = {
           type: "host set pdf",
           base64PDF: base64PDF as string,
+          numberOfQuestions: numberOfQuestions,
         };
         ws.send(JSON.stringify(message));
       });
@@ -72,6 +74,17 @@ export function HostLobby() {
             <li>Name: {file.name}</li>
             <li>Type: {file.type}</li>
             <li>Size: {file.size} bytes</li>
+            <li>
+              Number of Questions{" "}
+              <input
+                type="number"
+                min={1}
+                value={numberOfQuestions}
+                onChange={(e) => {
+                  setNumberOfQuestions(Number(e.target.value));
+                }}
+              ></input>
+            </li>
           </ul>
         </section>
       )}
@@ -79,6 +92,17 @@ export function HostLobby() {
       {file && (
         <button onClick={handleUpload} className="submit">
           Upload a file
+        </button>
+      )}
+
+      {isReady && (
+        <button
+          onClick={() => {
+            const message: ClientMessage = { type: "host start" };
+            ws.send(JSON.stringify(message));
+          }}
+        >
+          Start!!!
         </button>
       )}
     </>
