@@ -32,6 +32,14 @@ async def glorious_main_loop():
 
         if isStateLobby(state_manager.get_state()):
             player_manager.filter_players(lambda x: x.is_connected())
+        else:
+            to_remove = player_manager.filter_players(lambda x: x.is_initialised)
+            for player in to_remove:
+                # TODO: Better handling to stop players from joining after lobby
+                #       Screen on frontend
+                sock = player.get_sock()
+                if sock is not None:
+                    connection_manager.disconnect(sock)
 
         player_state: ServerPlayersStatusBroadcast = ServerPlayersStatusBroadcast(
             type="players status",
@@ -51,12 +59,12 @@ async def glorious_main_loop():
             ),
         )
 
-        await connection_manager.broadcast(player_state.model_dump_json())
+        await player_manager.broadcast(player_state.model_dump_json())
 
         server_state: ServerStateBroadcast = ServerStateBroadcast(
             type="state", state=state_manager.get_state()
         )
-        await connection_manager.broadcast(server_state.model_dump_json())
+        await player_manager.broadcast(server_state.model_dump_json())
 
         print(connection_manager.active_connections, state_manager.get_state())
 

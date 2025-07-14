@@ -2,7 +2,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from types import CoroutineType
-from typing import Coroutine, Any, Iterable, Optional
+from typing import Coroutine, Any, Iterable, Optional, Callable
 from fastapi import WebSocket
 
 
@@ -61,6 +61,9 @@ class ConnectionManager:
 
     def disconnect(self, c: CommunicationMedium):
         self.active_connections.remove(c)
+
+    def filter_connections(self, condition: Callable[[CommunicationMedium], bool]):
+        self.active_connections = list(filter(condition, self.active_connections))
 
     async def send_personal_message(self, c: CommunicationMedium, message: str):
         await c.send_text(message)

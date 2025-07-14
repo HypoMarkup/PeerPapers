@@ -130,8 +130,8 @@ def handle_set_player_data(
             None,
         )
 
-    p.name = new_name
-    p.pictureURL = incoming_msg.pictureURL
+    p.set_data(new_name, incoming_msg.pictureURL)
+
     return (
         ServerActionSuccessMessage(
             type="action success", actionType="set player data"
@@ -175,8 +175,26 @@ def handle_host_start(
     data: str, _: Player
 ) -> tuple[Optional[str], Optional[int], Optional[str]]:
     try:
-        state_manager.start()
-        return (None, None, None)
+        if player_manager.number_of_players() > 1:
+            state_manager.start()
+            return (
+                ServerActionSuccessMessage(
+                    type="action success", actionType="host start"
+                ).model_dump_json(),
+                None,
+                None,
+            )
+        else:
+            return (
+                ServerActionFailMessage(
+                    type="action fail",
+                    actionType="host start",
+                    reason="2 or more players are needed to start the session",
+                ).model_dump_json(),
+                None,
+                None,
+            )
+
     except RuntimeError as e:
         return (
             None,

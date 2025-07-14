@@ -35,7 +35,10 @@ export function HostLobby({ isReady }: { isReady: boolean }) {
     useCallback(
       (message) => {
         if (isServerActionFailMessage(message)) {
-          if (message.actionType == "host set pdf") {
+          if (
+            message.actionType === "host set pdf" ||
+            message.actionType === "host start"
+          ) {
             setStatusMessage(message.reason);
           }
         }

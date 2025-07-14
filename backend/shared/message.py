@@ -15,7 +15,7 @@ class ServerState(Enum):
 #
 
 # Types which have a generic fail and success message
-actionTypes = Literal["set player data", "host set pdf"]
+actionTypes = Literal["set player data", "host set pdf", "host start"]
 
 ClientMessageTypes = Literal[
     "initial connect",

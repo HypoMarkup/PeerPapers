@@ -11,6 +11,7 @@ class Player:
 
     name: str
     pictureURL: str
+    is_initialised: bool
 
     def __init__(self, sock: CommunicationMedium):
         self.uuid: str = self.generate_UUID()
@@ -18,6 +19,12 @@ class Player:
 
         self.name = ""
         self.pictureURL = ""
+        self.is_initialised = False
+
+    def set_data(self, name: str, pictureURL: str):
+        self.is_initialised = True
+        self.name = name
+        self.pictureURL = pictureURL
 
     def generate_UUID(self) -> str:
         # uuid4 is random
@@ -42,6 +49,9 @@ class PlayerManager:
         self.players: list[Player] = []
         self.__host: Optional[Player] = None
 
+    def number_of_players(self):
+        return len(list(filter(lambda x: x.is_initialised, self.players)))
+
     def add_player(self, p: Player):
         self.players.append(p)
         if self.__host == None:
@@ -56,7 +66,7 @@ class PlayerManager:
     async def broadcast(self, message: str):
         for player in self.players:
             sock = player.get_sock()
-            if sock is not None:
+            if sock is not None and player.is_initialised:
                 await sock.send_text(message)
 
     def get_player(self, condition: Callable[[Player], bool]):
@@ -66,7 +76,9 @@ class PlayerManager:
         return None
 
     def filter_players(self, condition: Callable[[Player], bool]):
+        to_remove = filter(lambda x: not condition(x), self.players)
         self.players = list(filter(condition, self.players))
+        return to_remove
 
     def get_player_by_connection(self, c: CommunicationMedium):
         return self.get_player(lambda x: x.get_sock() == c)
