@@ -20,7 +20,7 @@ import {
   isServerActionSuccessMessage,
   isServerSendPlayerDataMessage,
 } from "../generated/message.guard";
-import type { WebSocketInterface } from "../contexts/WebsocketProvider";
+import type { WebSocketInterface } from "../contexts/WebSocketProvider";
 
 // Enums bad or something "Enums are non erasable TypeScript code"
 type RequestState =

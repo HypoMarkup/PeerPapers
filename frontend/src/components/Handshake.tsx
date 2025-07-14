@@ -10,7 +10,7 @@ import {
   isServerFailedReconnectionMessage,
   isServerUUIDAssignmentMessage,
 } from "../generated/message.guard";
-import type { WebSocketInterface } from "../contexts/WebsocketProvider";
+import type { WebSocketInterface } from "../contexts/WebSocketProvider";
 
 export function Handshake({
   completeHandshake,

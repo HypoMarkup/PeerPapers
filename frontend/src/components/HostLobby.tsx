@@ -1,7 +1,7 @@
 // https://uploadcare.com/blog/how-to-upload-file-in-react/
 import React, { useCallback, useContext, useState } from "react";
 import { getBase64 } from "../helpers/utilities";
-import type { WebSocketInterface } from "../contexts/WebsocketProvider";
+import type { WebSocketInterface } from "../contexts/WebSocketProvider";
 import { WebsocketContext } from "../contexts/WebSocketContext";
 import type { ClientHostSetPDF, ClientMessage } from "../generated/message";
 import { useWebsocketMessage } from "../hooks/useWebsocketMessage";

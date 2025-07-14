@@ -1,7 +1,7 @@
 import { useContext, useEffect } from "react";
 import type { ServerMessage } from "../generated/message";
 import { WebsocketContext } from "../contexts/WebSocketContext";
-import type { MessageHandlerFunction } from "../contexts/WebsocketProvider";
+import type { MessageHandlerFunction } from "../contexts/WebSocketProvider";
 
 export function useWebsocketMessage(
   messageType: ServerMessage["type"],
