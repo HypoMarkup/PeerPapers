@@ -1,5 +1,5 @@
 from connectivity import ConnectionManager
-from player import PlayerManager
+from player_manager import PlayerManager
 from shared.message import ServerState
 from typing import Optional
 from state_manager import StateManager

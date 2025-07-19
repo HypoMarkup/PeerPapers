@@ -12,6 +12,7 @@ class Player:
     name: str
     pictureURL: str
     is_initialised: bool
+    is_finished: bool
 
     def __init__(self, sock: CommunicationMedium):
         self.uuid: str = self.generate_UUID()
@@ -20,6 +21,7 @@ class Player:
         self.name = ""
         self.pictureURL = ""
         self.is_initialised = False
+        self.is_finished = False
 
     def set_data(self, name: str, pictureURL: str):
         self.is_initialised = True
@@ -40,6 +42,10 @@ class Player:
         sock_instance = self.sock()
         return sock_instance is not None
 
+    def check_finished(self):
+        return self.is_finished
+
+
     def __repr__(self) -> str:
         return f"{self.uuid} {self.sock()}"
 
@@ -49,8 +55,11 @@ class PlayerManager:
         self.players: list[Player] = []
         self.__host: Optional[Player] = None
 
+    def valid_players(self):
+        return list(filter(lambda x: x.is_initialised, self.players))
+
     def number_of_players(self):
-        return len(list(filter(lambda x: x.is_initialised, self.players)))
+        return len(self.valid_players())
 
     def add_player(self, p: Player):
         self.players.append(p)
@@ -85,3 +94,10 @@ class PlayerManager:
 
     def get_host(self):
         return self.__host
+
+    def all_players_finished(self):
+        return all(p.check_finished() for p in self.players if p.is_initialised)
+
+    def unready_all_players(self):
+        for p in self.valid_players():
+            p.is_finished = False

@@ -8,6 +8,8 @@ import {
 } from "./generated/message.guard";
 import { HostLobby } from "./components/HostLobby";
 import type { ServerState } from "./generated/message";
+import { PDFViewer } from "./components/PDFViewer";
+import { testPDF } from "./testPDF";
 
 function App() {
   const [name, setName] = useState("");
@@ -42,6 +44,8 @@ function App() {
       }
     }, [])
   );
+
+  return <PDFViewer pdfBase64={testPDF} />;
 
   if (state === "LOBBY_NOT_READY" || state === "LOBBY_READY") {
     return (

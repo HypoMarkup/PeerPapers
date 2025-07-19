@@ -1,7 +1,7 @@
 from typing import Optional
 from validators import is_valid_name
 from connectivity import CommunicationMedium
-from player import Player
+from player_manager import Player
 from managers import player_manager, state_manager, content_manager
 from shared.message import (
     ClientSetPlayerDataMessage,
@@ -15,7 +15,6 @@ from shared.message import (
     ClientHostSetPDF,
     ServerState,
 )
-from helper import isStateLobby
 
 # Authenticated messages are messages which can only be made by clients with a player object
 # Host messages are authenticated messages which can only be made by the host
@@ -36,6 +35,8 @@ from helper import isStateLobby
 
 # If code and reason are not None, then an exception is raised and the socket disconnected
 # Message will be sent before socket is disconnected
+
+# For websocket codes, please see: https://github.com/Luka967/websocket-close-codes or https://datatracker.ietf.org/doc/html/rfc6455#section-7.4
 
 
 def handle_initial_connect(
@@ -63,7 +64,7 @@ def handle_reconnect(
         outgoing_msg = ServerFailedReconnectionMessage(
             type="failed reconnect",
             reason="invalid uuid",
-            shouldReset=(isStateLobby(state_manager.get_state())),
+            shouldReset=(state_manager.is_in_lobby()),
         )
         return (None, outgoing_msg.model_dump_json(), 1003, "Invalid uuid")
 
@@ -172,7 +173,7 @@ def handle_host_set_PDF(
 
 
 def handle_host_start(
-    data: str, _: Player
+    _: str, __: Player
 ) -> tuple[Optional[str], Optional[int], Optional[str]]:
     try:
         if player_manager.number_of_players() > 1:

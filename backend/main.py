@@ -11,17 +11,19 @@ from message_handlers import (
     handle_host_start,
 )
 from connectivity import CommunicationMedium, WebsocketMedium
-from player import Player
-from managers import player_manager, connection_manager, state_manager
+from player_manager import Player
+from managers import player_manager, connection_manager, state_manager, content_manager
 from shared.message import (
     ClientMessageTypes,
     PlayerStatus,
     ClientMessage,
     ServerPlayersStatusBroadcast,
     ServerStateBroadcast,
+    ServerState,
+    ServerQuestionStageBroadcast,
 )
+
 from pydantic import ValidationError
-from helper import isStateLobby
 
 
 # Server -> Clients
@@ -30,7 +32,7 @@ async def glorious_main_loop():
         # All game logic goes here
         await sleep(5)
 
-        if isStateLobby(state_manager.get_state()):
+        if state_manager.is_in_lobby():
             player_manager.filter_players(lambda x: x.is_connected())
         else:
             to_remove = player_manager.filter_players(lambda x: x.is_initialised)
@@ -65,6 +67,14 @@ async def glorious_main_loop():
             type="state", state=state_manager.get_state()
         )
         await player_manager.broadcast(server_state.model_dump_json())
+
+        if state_manager.get_state() == ServerState.QUESTION:
+            pdf = content_manager.get_pdf()
+            assert pdf is not None
+            question: ServerQuestionStageBroadcast = ServerQuestionStageBroadcast(
+                type="question", base64PDF=pdf, marks=10
+            )
+            await player_manager.broadcast(question.model_dump_json())
 
         print(connection_manager.active_connections, state_manager.get_state())
 
@@ -164,7 +174,7 @@ async def websocket_endpoint(ws: WebSocket):
         connection_manager.disconnect(c)
 
         # Reconnection not allowed in lobby
-        if isStateLobby(state_manager.get_state()):
+        if state_manager.is_in_lobby():
             p = player_manager.get_player_by_connection(c)
             if p is not None:
                 player_manager.remove_player(p)

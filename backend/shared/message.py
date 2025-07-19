@@ -8,7 +8,13 @@ class ServerState(Enum):
     LOBBY_NOT_READY = "LOBBY_NOT_READY"
     LOBBY_READY = "LOBBY_READY"
     QUESTION = "QUESTION"
+    MARKING = "MARKING"
+    WAITING = "WAITING"
+    GAME_FINISH = "GAME_FINISH"
 
+class ClientAnswer(BaseModel):
+    image: str  # Base64
+    text: str   
 
 #
 # Client messages
@@ -67,8 +73,8 @@ ServerMessageTypes = Literal[
     "action fail",
     "send player data",
     "players status",
-    "pdf",
     "state",
+    "question",
 ]
 
 
@@ -131,6 +137,7 @@ class ServerStateBroadcast(BaseModel):
     state: ServerState
 
 
-class ServerPDFBroadcast(BaseModel):
-    type: Literal["pdf"]
+class ServerQuestionStageBroadcast(BaseModel):
+    type: Literal["question"]
     base64PDF: str
+    marks: int
