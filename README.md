@@ -2,7 +2,7 @@
 
 A real-time collaborative paper review and annotation platform built with Python FastAPI backend and React TypeScript frontend.
 
-![Static Badge](https://img.shields.io/badge/Python_version-2.10-lime)  ![Static Badge](https://img.shields.io/badge/React-19.1-blue)
+![Static Badge](https://img.shields.io/badge/Python_version-3.10-lime)  ![Static Badge](https://img.shields.io/badge/React-19.1-blue)
 
 ## 🚀 Quick Start
 
