@@ -1,0 +1,103 @@
+syntax = "proto3";
+package v1;
+
+import "v1/models.proto";
+
+// ═══════════════════════════════════════
+//  Client → Server
+// ═══════════════════════════════════════
+
+message Authenticate {
+  string session_token = 1; // Empty on first connect, populated on reconnect
+}
+
+message CreateRoom {
+  string password = 1;
+  string player_name = 2;
+}
+
+message JoinRoom {
+  string room_code = 1;
+  string password = 2;
+  string player_name = 3;
+}
+
+message LeaveRoom {}
+
+message UpdateSettings {
+  RoomSettings settings = 1;
+}
+
+message SetReady {
+  bool is_ready = 1;
+}
+
+message StartExam {} // Admin-only
+
+message SaveProgress {
+  SubmissionSection section = 1; // Auto-saved periodically by frontend
+}
+
+message SubmitMarking {
+  MarkingResult result = 1;
+}
+
+message ForceEndPhase {} // Admin-only; force transition to next phase
+
+message ClientMessage {
+  oneof payload {
+    Authenticate authenticate = 1;
+    CreateRoom create_room = 2;
+    JoinRoom join_room = 3;
+    LeaveRoom leave_room = 4;
+    UpdateSettings update_settings = 5;
+    SetReady set_ready = 6;
+    StartExam start_exam = 7;
+    SaveProgress save_progress = 8;
+    SubmitMarking submit_marking = 9;
+    ForceEndPhase force_end_phase = 10;
+  }
+}
+
+// ═══════════════════════════════════════
+//  Server → Client
+// ═══════════════════════════════════════
+
+message AuthSuccess {
+  string session_token = 1;
+  string player_id = 2;
+}
+
+message RoomCreated {
+  string room_code = 1;
+  string join_url = 2;
+}
+
+message RoomStateUpdate {
+  RoomState state = 1;
+}
+
+message MarkingAssignment {
+  Submission submission = 1; // The work you need to mark
+  string author_name = 2;
+}
+
+message ResultsBroadcast {
+  repeated PlayerResult results = 1;
+}
+
+message ErrorMessage {
+  string code = 1; // e.g. "INVALID_PASSWORD", "ROOM_FULL", "NOT_ADMIN"
+  string message = 2; // e.g. "Incorrect room password. Please try again."
+}
+
+message ServerMessage {
+  oneof payload {
+    AuthSuccess auth_success = 1;
+    RoomCreated room_created = 2;
+    RoomStateUpdate room_state_update = 3;
+    MarkingAssignment marking_assignment = 4;
+    ResultsBroadcast results_broadcast = 5;
+    ErrorMessage error = 6;
+  }
+}

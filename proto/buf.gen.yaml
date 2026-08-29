@@ -1,0 +1,15 @@
+version: v2
+plugins:
+  # TypeScript
+  - remote: buf.build/bufbuild/es:v2.2.3
+    out: ../frontend/generated
+    opt:
+      - target=ts
+
+  # Python code (_pb2.py)
+  - remote: buf.build/protocolbuffers/python:v29.3
+    out: ../backend/generated
+
+  # Python type stubs (_pb2.pyi)
+  - remote: buf.build/protocolbuffers/pyi:v29.3
+    out: ../backend/generated
