@@ -13,21 +13,21 @@ message Player {
 
 // ─── Room ───
 
-enum RoomPhase {
-  ROOM_PHASE_UNSPECIFIED = 0;
-  ROOM_PHASE_LOBBY = 1;
-  ROOM_PHASE_EXAM = 2;
-  ROOM_PHASE_MARKING = 3;
-  ROOM_PHASE_RESULTS = 4;
+enum RoomState {
+  ROOM_STATE_UNSPECIFIED = 0;
+  ROOM_STATE_LOBBY = 1;
+  ROOM_STATE_EXAM = 2;
+  ROOM_STATE_MARKING = 3;
+  ROOM_STATE_RESULTS = 4;
 }
 
 message RoomSettings {
   int32 exam_duration_mins = 1;
 }
 
-message RoomState {
+message RoomSnapshot {
   string room_code = 1;
-  RoomPhase phase = 2;
+  RoomState state = 2;
   RoomSettings settings = 3;
   repeated Player players = 4;
   bool exam_pdf_uploaded = 5;
