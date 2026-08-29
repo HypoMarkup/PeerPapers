@@ -1,0 +1,76 @@
+syntax = "proto3";
+package v1;
+
+// ─── Player ───
+
+message Player {
+  string id = 1;
+  string name = 2;
+  bool is_connected = 3;
+  bool is_ready = 4;
+  bool is_admin = 5;
+}
+
+// ─── Room ───
+
+enum RoomPhase {
+  ROOM_PHASE_UNSPECIFIED = 0;
+  ROOM_PHASE_LOBBY = 1;
+  ROOM_PHASE_EXAM = 2;
+  ROOM_PHASE_MARKING = 3;
+  ROOM_PHASE_RESULTS = 4;
+}
+
+message RoomSettings {
+  int32 exam_duration_mins = 1;
+}
+
+message RoomState {
+  string room_code = 1;
+  RoomPhase phase = 2;
+  RoomSettings settings = 3;
+  repeated Player players = 4;
+  bool exam_pdf_uploaded = 5;
+
+  // Unix timestamp (milliseconds) when the current phase will end.
+  // 0 if the phase has no timer (e.g. LOBBY or RESULTS).
+  int64 phase_end_time = 6;
+}
+
+// ─── Submissions ───
+
+message SubmissionSection {
+  int32 section_index = 1;
+  string text_data = 2;
+  string whiteboard_data = 3;
+}
+
+message Submission {
+  string player_id = 1;
+  repeated SubmissionSection sections = 2;
+}
+
+// ─── Marking ───
+
+message SectionFeedback {
+  int32 section_index = 1;
+  string text_comments = 2;
+  string whiteboard_annotations = 3;
+  float score = 4;
+  int32 max_score = 5;
+}
+
+message MarkingResult {
+  string marker_id = 1; // ID of user who marked the answers
+  string author_id = 2; // ID of user whose work was marked
+  repeated SectionFeedback sections = 3;
+}
+
+// ─── Results ───
+
+message PlayerResult {
+  Player player = 1;
+  float total_score = 2;
+  int32 max_score = 3;
+  MarkingResult feedback_received = 4;
+}
