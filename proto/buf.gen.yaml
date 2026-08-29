@@ -2,7 +2,7 @@ version: v2
 plugins:
   # TypeScript
   - remote: buf.build/bufbuild/es:v2.2.3
-    out: ../frontend/generated
+    out: ../frontend/src/generated
     opt:
       - target=ts
 
