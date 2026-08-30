@@ -39,9 +39,10 @@ class PlayerAlreadyExistsError(Exception):
 class PlayerStore:
     """Manages the collection of players and their sessions within a room."""
 
-    def __init__(self) -> None:
-        self._players: dict[str, Player] = {}
-        self._token_to_id: dict[str, str] = {}
+    def __init__(self, players: list[Player] | None = None) -> None:
+        players = players or []
+        self._players: dict[str, Player] = {p.id: p for p in players}
+        self._token_to_id: dict[str, str] = {p.session_token: p.id for p in players}
 
     def __iter__(self) -> Iterator[Player]:
         """Allows direct iteration over players (e.g. `for p in player_store:`)."""

@@ -42,7 +42,7 @@ def calculate_player_result(
 def calculate_all_results(
     players: list[Player],
     marking_results_by_author: dict[str, MarkingResult],
-    max_possible_score: int,
+    max_score: int,
 ) -> list[PlayerResult]:
     """Calculates results for all players and returns them sorted by total score descending."""
 
@@ -50,7 +50,7 @@ def calculate_all_results(
         calculate_player_result(
             player=player,
             feedback_received=marking_results_by_author.get(player.id),
-            max_score=max_possible_score,
+            max_score=max_score,
         )
         for player in players
     ]
