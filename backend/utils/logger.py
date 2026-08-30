@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def setup_logger(name: str = "peerpapers", level: int = logging.INFO) -> logging.Logger:
+def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     """Creates and configures a standard logger instance."""
 
     logger = logging.getLogger(name)
@@ -24,11 +24,7 @@ def setup_logger(name: str = "peerpapers", level: int = logging.INFO) -> logging
     return logger
 
 
-# Default global logger instance
-logger = setup_logger()
-
-
 def get_logger(module_name: str) -> logging.Logger:
     """Returns a child logger scoped to a specific module."""
 
-    return setup_logger(f"peerpapers.{module_name}")
+    return setup_logger(f"{module_name}")
