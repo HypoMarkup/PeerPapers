@@ -4,11 +4,10 @@ from collections.abc import Iterable
 from websockets.asyncio.server import ServerConnection
 
 from generated.v1.messages_pb2 import ServerMessage
+from utils.constants import DEFAULT_SEND_TIMEOUT
 from utils.logger import get_logger
 
 logger = get_logger("transport.connection_manager")
-
-DEFAULT_SEND_TIMEOUT = 5.0
 
 
 class ConnectionManager:
