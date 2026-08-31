@@ -74,7 +74,7 @@ message RoomCreated {
 }
 
 message RoomStateUpdate {
-  RoomState state = 1;
+  RoomSnapshot room = 1;
 }
 
 message MarkingAssignment {
