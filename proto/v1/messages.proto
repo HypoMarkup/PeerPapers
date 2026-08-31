@@ -86,9 +86,33 @@ message ResultsBroadcast {
   repeated PlayerResult results = 1;
 }
 
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+
+  // Auth & Access
+  ERROR_CODE_UNAUTHORIZED = 1;
+  ERROR_CODE_NOT_ADMIN = 2;
+
+  // Room Joining & Setup
+  ERROR_CODE_ROOM_NOT_FOUND = 3;
+  ERROR_CODE_INVALID_PASSWORD = 4;
+  ERROR_CODE_NAME_TAKEN = 5;
+  ERROR_CODE_INVALID_ARGUMENT = 6;
+
+  // Phase & Guards
+  ERROR_CODE_INVALID_PHASE = 7;
+  ERROR_CODE_PLAYERS_NOT_READY = 8;
+  ERROR_CODE_EXAM_NOT_UPLOADED = 9;
+  ERROR_CODE_MARKING_INCOMPLETE = 10;
+
+  // Marking & System
+  ERROR_CODE_UNASSIGNED_MARKER = 11;
+  ERROR_CODE_INTERNAL_ERROR = 12;
+}
+
 message ErrorMessage {
-  string code = 1; // e.g. "INVALID_PASSWORD", "ROOM_FULL", "NOT_ADMIN"
-  string message = 2; // e.g. "Incorrect room password. Please try again."
+  ErrorCode code = 1;
+  string message = 2;
 }
 
 message ServerMessage {
