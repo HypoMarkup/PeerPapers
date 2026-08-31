@@ -15,9 +15,7 @@ class ConnectionManager:
     """Tracks active WebSocket connections for players and orchestrates message delivery."""
 
     def __init__(self) -> None:
-        """Initializes an empty player-to-socket registry."""
-
-        self._connections: dict[str, ServerConnection] = {}
+        self._connections: dict[str, ServerConnection] = {}     # player_id to socket
 
     def register(self, player_id: str, ws: ServerConnection) -> None:
         """Binds a player ID to their active WebSocket connection."""
