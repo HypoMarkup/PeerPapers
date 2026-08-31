@@ -25,7 +25,7 @@ def test_assign_peer_markers_multiple_players() -> None:
     """Multiple players should form a valid circular assignment with no self-marking."""
 
     players = [f"p_{i}" for i in range(5)]
-    assignments = assign_peer_markers(players, randomize=False)
+    assignments = assign_peer_markers(players, randomise=False)
 
     # 1. Every player is assigned to mark someone
     assert set(assignments.keys()) == set(players)
@@ -41,7 +41,7 @@ def test_assign_peer_markers_randomized_validity() -> None:
     """Randomized assignments must still satisfy all bijection and no self-marking invariants."""
 
     players = [f"p_{i}" for i in range(10)]
-    assignments = assign_peer_markers(players, randomize=True)
+    assignments = assign_peer_markers(players, randomise=True)
 
     assert len(assignments) == len(players)
     assert set(assignments.keys()) == set(players)
