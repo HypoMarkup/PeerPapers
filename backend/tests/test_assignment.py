@@ -1,4 +1,3 @@
-import pytest
 from services.assignment import assign_peer_markers
 
 

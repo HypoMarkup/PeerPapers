@@ -2,6 +2,7 @@ import asyncio
 from collections.abc import Iterable
 
 from websockets.asyncio.server import ServerConnection
+from websockets.exceptions import WebSocketException
 
 from generated.v1.messages_pb2 import ServerMessage
 from utils.constants import DEFAULT_SEND_TIMEOUT
@@ -55,11 +56,7 @@ class ConnectionManager:
         try:
             await asyncio.wait_for(ws.send(payload), timeout=DEFAULT_SEND_TIMEOUT)
             return True
-        except TimeoutError:
-            logger.warning(f"Send timed out for player {player_id}.")
-            self.unregister(player_id)
-            return False
-        except Exception as e:
+        except (TimeoutError, WebSocketException, OSError) as e:
             logger.warning(f"Failed to send message to player {player_id}: {e}")
             self.unregister(player_id)
             return False
