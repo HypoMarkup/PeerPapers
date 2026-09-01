@@ -5,7 +5,7 @@ from websockets.exceptions import WebSocketException
 
 from core.player import Player
 from core.room import Room
-from generated.v1.messages_pb2 import ErrorMessage, RoomStateUpdate, ServerMessage
+from generated.v1.messages_pb2 import ErrorCode, ErrorMessage, RoomStateUpdate, ServerMessage
 from services.room_manager import RoomManager
 from transport.connection_manager import ConnectionManager
 from utils.constants import DEFAULT_SEND_TIMEOUT
@@ -57,23 +57,21 @@ class Context:
         self.player = None
         self.room = None
 
-    async def send(self, message: ServerMessage) -> bool:
+    async def send(self, message: ServerMessage) -> None:
         """Sends a binary Protobuf ServerMessage directly to this connection."""
 
         try:
             await asyncio.wait_for(self.ws.send(message.SerializeToString()), timeout=DEFAULT_SEND_TIMEOUT)
-            return True
         except (TimeoutError, WebSocketException, OSError) as e:
             logger.warning(f"Failed to send message: {e}")
             if self.player is not None:
                 self.conn_manager.unregister(self.player.id)
-            return False
 
-    async def send_error(self, code: str, message: str) -> bool:
+    async def send_error(self, code: ErrorCode, message: str) -> None:
         """Constructs and sends a structured ErrorMessage proto to this connection."""
 
         error_proto = ServerMessage(error=ErrorMessage(code=code, message=message))
-        return await self.send(error_proto)
+        await self.send(error_proto)
 
     async def broadcast_to_room(
         self,

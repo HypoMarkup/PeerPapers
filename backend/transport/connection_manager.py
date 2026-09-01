@@ -41,23 +41,21 @@ class ConnectionManager:
 
         return player_id in self._connections
 
-    async def send_to_player(self, player_id: str, message: ServerMessage | bytes) -> bool:
+    async def send_to_player(self, player_id: str, message: ServerMessage | bytes) -> None:
         """Sends a binary Protobuf ServerMessage to a specific player with a timeout."""
 
         ws = self._connections.get(player_id)
         if ws is None:
             logger.warning(f"Cannot send message: player {player_id} is not connected.")
-            return False
+            return
 
         payload = message if isinstance(message, bytes) else message.SerializeToString()
 
         try:
             await asyncio.wait_for(ws.send(payload), timeout=DEFAULT_SEND_TIMEOUT)
-            return True
         except (TimeoutError, WebSocketException, OSError) as e:
             logger.warning(f"Failed to send message to player {player_id}: {e}")
             self.unregister(player_id)
-            return False
 
     async def broadcast_to_players(
         self,
