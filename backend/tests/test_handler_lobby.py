@@ -9,6 +9,7 @@ from generated.v1.messages_pb2 import (
     ServerMessage,
     SetReady,
     UpdateSettings,
+    UploadExam,
 )
 from generated.v1.models_pb2 import RoomSettings
 from handlers.lobby import (
@@ -17,6 +18,7 @@ from handlers.lobby import (
     handle_leave_room,
     handle_set_ready,
     handle_update_settings,
+    handle_upload_exam,
 )
 from services.room_manager import RoomManager
 from transport.connection_manager import ConnectionManager
@@ -269,3 +271,46 @@ def test_handle_update_settings_and_ready() -> None:
         assert room.settings.exam_duration_mins == 45
 
     asyncio.run(run())
+
+
+# ─── handle_upload_exam ───
+
+
+def test_handle_upload_exam() -> None:
+    """Admin uploads PDF successfully; non-admin and empty uploads are rejected."""
+
+    async def run() -> None:
+        rm = RoomManager()
+        cm = ConnectionManager()
+        admin = Player(name="Admin", is_admin=True)
+        room = rm.create_room(password="pw", admin_player=admin)
+
+        ctx_admin, _, _, ws_admin = create_context(rm=rm, cm=cm)
+        ctx_admin.bind_session(admin, room)
+
+        # 1. Admin uploads valid exam PDF
+        pdf_bytes = b"%PDF-1.4 sample exam content"
+        await handle_upload_exam(ctx_admin, UploadExam(filename="biology_exam.pdf", file_data=pdf_bytes))
+
+        assert room.get_exam_pdf() == ("biology_exam.pdf", pdf_bytes)
+
+        # Snapshot broadcasted with exam_pdf_uploaded = True
+        latest_msg = ws_admin.sent_messages[-1]
+        assert latest_msg.WhichOneof("payload") == "room_state_update"
+        assert latest_msg.room_state_update.room.exam_pdf_uploaded is True
+
+        # 2. Empty file data is rejected
+        await handle_upload_exam(ctx_admin, UploadExam(filename="empty.pdf", file_data=b""))
+        assert ws_admin.sent_messages[-1].error.code == ErrorCode.ERROR_CODE_INVALID_ARGUMENT
+
+        # 3. Non-admin cannot upload
+        member = Player(name="Bob", is_admin=False)
+        room.players.add_player(member)
+        ctx_member, _, _, ws_member = create_context(rm=rm, cm=cm)
+        ctx_member.bind_session(member, room)
+
+        await handle_upload_exam(ctx_member, UploadExam(filename="hack.pdf", file_data=pdf_bytes))
+        assert ws_member.sent_messages[-1].error.code == ErrorCode.ERROR_CODE_NOT_ADMIN
+
+    asyncio.run(run())
+

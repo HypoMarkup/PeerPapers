@@ -11,6 +11,7 @@ from generated.v1.messages_pb2 import (
     ServerMessage,
     SetReady,
     UpdateSettings,
+    UploadExam,
 )
 from services.room_manager import RoomCodeCollisionError
 from transport.context import Context
@@ -147,4 +148,31 @@ async def handle_set_ready(ctx: Context, msg: SetReady) -> None:
     assert ctx.player is not None
 
     ctx.player.is_ready = msg.is_ready
+    await ctx.broadcast_room_snapshot()
+
+
+async def handle_upload_exam(ctx: Context, msg: UploadExam) -> None:
+    """Handles admin uploading the exam PDF file during the LOBBY phase."""
+
+    if not ctx.is_authenticated:
+        return await ctx.send_error(ErrorCode.ERROR_CODE_UNAUTHORIZED, "You are not in a room.")
+    assert ctx.room is not None
+
+    if not ctx.is_admin:
+        return await ctx.send_error(ErrorCode.ERROR_CODE_NOT_ADMIN, "Only the admin can upload the exam.")
+
+    if not msg.filename:
+        return await ctx.send_error(ErrorCode.ERROR_CODE_INVALID_ARGUMENT, "Exam filename cannot be empty.")
+
+    if not msg.file_data:
+        return await ctx.send_error(ErrorCode.ERROR_CODE_INVALID_ARGUMENT, "Exam file data cannot be empty.")
+
+    try:
+        ctx.room.set_exam_pdf(
+            filename=msg.filename,
+            file_bytes=msg.file_data,
+        )
+    except RoomPhaseError:
+        return await ctx.send_error(ErrorCode.ERROR_CODE_INVALID_PHASE, "Exam PDF can only be uploaded in the lobby.")
+
     await ctx.broadcast_room_snapshot()

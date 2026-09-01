@@ -45,6 +45,13 @@ message SubmitMarking {
 
 message ForceEndPhase {} // Admin-only; force transition to next phase
 
+message UploadExam {
+  string filename = 1;
+  bytes file_data = 2;
+}
+
+message RequestExamPdf {}
+
 message ClientMessage {
   oneof payload {
     Authenticate authenticate = 1;
@@ -57,6 +64,8 @@ message ClientMessage {
     SaveProgress save_progress = 8;
     SubmitMarking submit_marking = 9;
     ForceEndPhase force_end_phase = 10;
+    UploadExam upload_exam = 11;
+    RequestExamPdf request_exam_pdf = 12;
   }
 }
 
@@ -85,6 +94,11 @@ message MarkingAssignment {
 
 message ResultsBroadcast {
   repeated PlayerResult results = 1;
+}
+
+message ExamPdfContent {
+  string filename = 1;
+  bytes file_data = 2;
 }
 
 enum ErrorCode {
@@ -124,5 +138,6 @@ message ServerMessage {
     MarkingAssignment marking_assignment = 4;
     ResultsBroadcast results_broadcast = 5;
     ErrorMessage error = 6;
+    ExamPdfContent exam_pdf_content = 7;
   }
 }
