@@ -14,6 +14,7 @@ from generated.v1.models_pb2 import (
     SubmissionSection,
 )
 from services.scoring import calculate_all_results
+from utils.constants import DEFAULT_EXAM_DURATION_MINS
 from utils.logger import get_logger
 
 logger = get_logger("core.room")
@@ -37,7 +38,7 @@ class Room:
         admin_player: Player,
         settings: RoomSettings | None = None,
     ) -> None:
-        self.settings: RoomSettings = settings or RoomSettings(exam_duration_mins=15)
+        self.settings: RoomSettings = settings or RoomSettings(exam_duration_mins=DEFAULT_EXAM_DURATION_MINS)
         self.players: PlayerStore = PlayerStore([admin_player])
         self.marking_results: dict[str, MarkingResult] = {}
         self._code: str = code
