@@ -1,6 +1,6 @@
 # PeerPapers
 
-A real-time collaborative exam and peer-marking platform built with a Python FastAPI backend, React TypeScript frontend, and Protocol Buffers over WebSockets.
+A real-time collaborative exam and peer-marking platform built with a Python WebSocket backend, React TypeScript frontend, and binary Protocol Buffers.
 
 ---
 
@@ -18,13 +18,38 @@ A real-time collaborative exam and peer-marking platform built with a Python Fas
 
 Follow instructions at https://buf.build/docs/cli/installation/
 
----
-
 ### Generating Protocol Buffer Code
 
-To compile the `.proto` definitions in `proto/` into Python models (`backend/generated/`) and TypeScript interfaces (`frontend/src/generated/`), run:
+From `/proto`, run:
 
 ```bash
-cd proto
 buf generate
+```
+
+### Install frontend dependancies
+
+From `/frontend`, run:
+
+```bash
+npm install
+```
+
+---
+
+## Running the app
+
+### In one terminal:
+
+From `/backend`, run:
+
+```bash
+python main.py
+```
+
+### In another terminal:
+
+From `/frontend`, run:
+
+```bash
+npm run dev
 ```
