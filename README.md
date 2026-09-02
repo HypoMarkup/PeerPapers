@@ -1,3 +1,5 @@
+# ⚠️ This repo is still in development. There may be (definitely are) bugs in the app.
+
 # PeerPapers
 
 A real-time collaborative exam and peer-marking platform built with a Python WebSocket backend, React TypeScript frontend, and binary Protocol Buffers.
