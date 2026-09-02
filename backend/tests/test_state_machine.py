@@ -1,4 +1,5 @@
 import pytest
+
 from core.state_machine import (
     GuardConditionFailedError,
     IllegalStateTransitionError,

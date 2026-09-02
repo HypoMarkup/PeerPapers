@@ -1,6 +1,7 @@
 import pytest
+
 from core.player import Player
-from core.room import Room, RoomError, RoomPhaseError
+from core.room import Room, RoomError, RoomStateError
 from generated.v1.models_pb2 import (
     MarkingResult,
     RoomSettings,
@@ -28,7 +29,7 @@ def test_room_phase_guards() -> None:
 
     # 1. save_progress cannot be called in LOBBY
     section = SubmissionSection(section_index=0, text_data="Hello")
-    with pytest.raises(RoomPhaseError):
+    with pytest.raises(RoomStateError):
         room.save_progress(admin.id, section)
 
     # Transition to EXAM
@@ -37,15 +38,15 @@ def test_room_phase_guards() -> None:
     room.start_exam()
 
     # 2. update_settings and set_exam_pdf cannot be called in EXAM
-    with pytest.raises(RoomPhaseError):
+    with pytest.raises(RoomStateError):
         room.update_settings(RoomSettings(exam_duration_mins=30))
 
-    with pytest.raises(RoomPhaseError):
+    with pytest.raises(RoomStateError):
         room.set_exam_pdf("new.pdf", b"%PDF...")
 
     # 3. submit_marking cannot be called in EXAM
     marking = MarkingResult(marker_id=admin.id, author_id=admin.id)
-    with pytest.raises(RoomPhaseError):
+    with pytest.raises(RoomStateError):
         room.submit_marking(admin.id, marking)
 
 

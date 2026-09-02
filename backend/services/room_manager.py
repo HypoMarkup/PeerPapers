@@ -4,12 +4,10 @@ import string
 from core.player import Player
 from core.room import Room
 from generated.v1.models_pb2 import RoomSettings
+from utils.constants import CODE_LENGTH, MAX_CODE_RETRIES
 from utils.logger import get_logger
 
 logger = get_logger("services.room_manager")
-
-CODE_LENGTH = 6
-MAX_CODE_RETRIES = 100
 
 
 class RoomCodeCollisionError(Exception):

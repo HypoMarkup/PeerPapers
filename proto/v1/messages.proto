@@ -14,6 +14,7 @@ message Authenticate {
 message CreateRoom {
   string password = 1;
   string player_name = 2;
+  RoomSettings settings = 3;
 }
 
 message JoinRoom {
@@ -44,6 +45,13 @@ message SubmitMarking {
 
 message ForceEndPhase {} // Admin-only; force transition to next phase
 
+message UploadExam {
+  string filename = 1;
+  bytes file_data = 2;
+}
+
+message RequestExamPdf {}
+
 message ClientMessage {
   oneof payload {
     Authenticate authenticate = 1;
@@ -56,6 +64,8 @@ message ClientMessage {
     SaveProgress save_progress = 8;
     SubmitMarking submit_marking = 9;
     ForceEndPhase force_end_phase = 10;
+    UploadExam upload_exam = 11;
+    RequestExamPdf request_exam_pdf = 12;
   }
 }
 
@@ -86,9 +96,38 @@ message ResultsBroadcast {
   repeated PlayerResult results = 1;
 }
 
+message ExamPdfContent {
+  string filename = 1;
+  bytes file_data = 2;
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+
+  // Auth & Access
+  ERROR_CODE_UNAUTHORIZED = 1;
+  ERROR_CODE_NOT_ADMIN = 2;
+
+  // Room Joining & Setup
+  ERROR_CODE_ROOM_NOT_FOUND = 3;
+  ERROR_CODE_INVALID_PASSWORD = 4;
+  ERROR_CODE_NAME_TAKEN = 5;
+  ERROR_CODE_INVALID_ARGUMENT = 6;
+
+  // State & Guards
+  ERROR_CODE_INVALID_STATE = 7;
+  ERROR_CODE_PLAYERS_NOT_READY = 8;
+  ERROR_CODE_EXAM_NOT_UPLOADED = 9;
+  ERROR_CODE_MARKING_INCOMPLETE = 10;
+
+  // Marking & System
+  ERROR_CODE_UNASSIGNED_MARKER = 11;
+  ERROR_CODE_INTERNAL_ERROR = 12;
+}
+
 message ErrorMessage {
-  string code = 1; // e.g. "INVALID_PASSWORD", "ROOM_FULL", "NOT_ADMIN"
-  string message = 2; // e.g. "Incorrect room password. Please try again."
+  ErrorCode code = 1;
+  string message = 2;
 }
 
 message ServerMessage {
@@ -99,5 +138,6 @@ message ServerMessage {
     MarkingAssignment marking_assignment = 4;
     ResultsBroadcast results_broadcast = 5;
     ErrorMessage error = 6;
+    ExamPdfContent exam_pdf_content = 7;
   }
 }
