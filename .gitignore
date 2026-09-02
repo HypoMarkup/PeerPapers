@@ -15,11 +15,14 @@ __pycache__/
 .coverage
 htmlcov/
 
-# Distribution / packaging
+# Distribution / packaging / Node
+node_modules/
 dist/
+dist-ssr/
 build/
 *.egg-info/
 *.egg
+*.local
 
 # Environment variables
 .env
