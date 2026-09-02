@@ -82,12 +82,16 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Connect WebSocket
   useEffect(() => {
+    let isUnmounted = false;
     const ws = new WebSocket(WS_URL);
     ws.binaryType = "arraybuffer";
     wsRef.current = ws;
 
     ws.onopen = () => {
+      if (isUnmounted) return;
       setIsConnected(true);
+      setErrorMessage(null); // Clear any connection errors on success
+
       // Auto-reconnect if session token exists
       const savedToken = localStorage.getItem("peerpapers_token");
       if (savedToken) {
@@ -102,12 +106,14 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     ws.onclose = () => {
+      if (isUnmounted) return;
       setIsConnected(false);
     };
 
     ws.onerror = () => {
+      if (isUnmounted) return;
       setIsConnected(false);
-      setErrorMessage("WebSocket connection error.");
+      setErrorMessage("WebSocket connection error. Please check if the backend server is running.");
     };
 
     ws.onmessage = (event: MessageEvent<ArrayBuffer>) => {
@@ -169,6 +175,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     return () => {
+      isUnmounted = true;
       ws.close();
     };
   }, []);
