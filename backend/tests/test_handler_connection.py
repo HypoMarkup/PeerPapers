@@ -4,9 +4,19 @@ from core.player import Player
 from generated.v1.messages_pb2 import (
     Authenticate,
     ErrorCode,
+    ForceEndPhase,
     ServerMessage,
+    StartExam,
+    UploadExam,
 )
+from generated.v1.models_pb2 import SubmissionSection
 from handlers.connection import handle_authenticate, handle_disconnect
+from handlers.exam import (
+    handle_force_end_exam,
+    handle_save_progress,
+    handle_start_exam,
+)
+from handlers.lobby import handle_upload_exam
 from services.room_manager import RoomManager
 from transport.connection_manager import ConnectionManager
 from transport.context import Context
@@ -23,14 +33,18 @@ class FakeWebSocket:
         self.sent_messages.append(msg)
 
 
-def create_context(ws: FakeWebSocket | None = None) -> tuple[Context, RoomManager, ConnectionManager, FakeWebSocket]:
+def create_context(
+    rm: RoomManager | None = None,
+    cm: ConnectionManager | None = None,
+    ws: FakeWebSocket | None = None,
+) -> tuple[Context, RoomManager, ConnectionManager, FakeWebSocket]:
     """Creates a test context with in-memory managers and a fake WebSocket."""
 
     fake_ws = ws or FakeWebSocket()
-    rm = RoomManager()
-    cm = ConnectionManager()
-    ctx = Context(ws=fake_ws, room_manager=rm, conn_manager=cm)  # type: ignore[arg-type]
-    return ctx, rm, cm, fake_ws
+    room_mgr = rm or RoomManager()
+    conn_mgr = cm or ConnectionManager()
+    ctx = Context(ws=fake_ws, room_manager=room_mgr, conn_manager=conn_mgr)  # type: ignore[arg-type]
+    return ctx, room_mgr, conn_mgr, fake_ws
 
 
 def test_handle_authenticate_success() -> None:
@@ -56,6 +70,54 @@ def test_handle_authenticate_success() -> None:
         assert len(fake_ws.sent_messages) >= 1
         assert fake_ws.sent_messages[0].WhichOneof("payload") == "auth_success"
         assert fake_ws.sent_messages[0].auth_success.player_id == admin.id
+
+    asyncio.run(run())
+
+
+def test_handle_authenticate_during_marking_phase_delivers_assignment() -> None:
+    """Reconnecting during the MARKING phase delivers the player's assigned paper."""
+
+    async def run() -> None:
+        rm = RoomManager()
+        cm = ConnectionManager()
+
+        alice = Player(name="Alice", is_admin=True, is_ready=True)
+        bob = Player(name="Bob", is_admin=False, is_ready=True)
+        room = rm.create_room(password="pw", admin_player=alice)
+        room.players.add_player(bob)
+
+        ctx_alice, _, _, _ = create_context(rm=rm, cm=cm)
+        ctx_alice.bind_session(alice, room)
+
+        ctx_bob, _, _, _ = create_context(rm=rm, cm=cm)
+        ctx_bob.bind_session(bob, room)
+
+        await handle_upload_exam(ctx_alice, UploadExam(filename="exam.pdf", file_data=b"%PDF..."))
+        await handle_start_exam(ctx_alice, StartExam())
+
+        from generated.v1.messages_pb2 import SaveProgress
+
+        await handle_save_progress(ctx_alice, SaveProgress(section=SubmissionSection(section_index=0, text_data="Alice work")))
+        await handle_save_progress(ctx_bob, SaveProgress(section=SubmissionSection(section_index=0, text_data="Bob work")))
+
+        # Disconnect Bob
+        await handle_disconnect(ctx_bob)
+        assert bob.is_connected is False
+
+        # Host transitions to MARKING while Bob is offline
+        await handle_force_end_exam(ctx_alice, ForceEndPhase())
+
+        # Bob reconnects with a fresh socket
+        ctx_bob_reconnect, _, _, ws_bob_reconnect = create_context(rm=rm, cm=cm)
+        await handle_authenticate(ctx_bob_reconnect, Authenticate(session_token=bob.session_token))
+
+        assert ctx_bob_reconnect.is_authenticated is True
+        assert bob.is_connected is True
+
+        # Bob must have received both AuthSuccess and MarkingAssignment
+        payload_types = [m.WhichOneof("payload") for m in ws_bob_reconnect.sent_messages]
+        assert "auth_success" in payload_types
+        assert "marking_assignment" in payload_types
 
     asyncio.run(run())
 

@@ -3,6 +3,7 @@ import asyncio
 from core.player import Player
 from generated.v1.messages_pb2 import (
     ErrorCode,
+    ForceEndPhase,
     RequestExamPdf,
     SaveProgress,
     ServerMessage,
@@ -11,6 +12,7 @@ from generated.v1.messages_pb2 import (
 )
 from generated.v1.models_pb2 import RoomState, SubmissionSection
 from handlers.exam import (
+    handle_force_end_exam,
     handle_request_exam_pdf,
     handle_save_progress,
     handle_start_exam,
@@ -160,7 +162,7 @@ def test_handle_save_progress_wrong_phase() -> None:
         section = SubmissionSection(section_index=0, text_data="test")
         await handle_save_progress(ctx_admin, SaveProgress(section=section))
 
-        assert ws_admin.sent_messages[-1].error.code == ErrorCode.ERROR_CODE_INVALID_PHASE
+        assert ws_admin.sent_messages[-1].error.code == ErrorCode.ERROR_CODE_INVALID_STATE
 
     asyncio.run(run())
 
@@ -215,5 +217,75 @@ def test_handle_request_exam_pdf_not_uploaded() -> None:
         await handle_request_exam_pdf(ctx_admin, RequestExamPdf())
 
         assert ws_admin.sent_messages[-1].error.code == ErrorCode.ERROR_CODE_EXAM_NOT_UPLOADED
+
+    asyncio.run(run())
+
+
+# ─── handle_force_end_exam ───
+
+
+def test_handle_force_end_exam_success() -> None:
+    """Admin ending exam transitions to MARKING, generates peer assignments, and delivers papers."""
+
+    async def run() -> None:
+        rm = RoomManager()
+        cm = ConnectionManager()
+
+        alice = Player(name="Alice", is_admin=True, is_ready=True)
+        bob = Player(name="Bob", is_admin=False, is_ready=True)
+        room = rm.create_room(password="pw", admin_player=alice)
+        room.players.add_player(bob)
+
+        ctx_alice, _, _, ws_alice = create_context(rm=rm, cm=cm)
+        ctx_alice.bind_session(alice, room)
+
+        ctx_bob, _, _, ws_bob = create_context(rm=rm, cm=cm)
+        ctx_bob.bind_session(bob, room)
+
+        await handle_upload_exam(ctx_alice, UploadExam(filename="exam.pdf", file_data=b"%PDF..."))
+        await handle_start_exam(ctx_alice, StartExam())
+
+        # Admin ends the exam
+        await handle_force_end_exam(ctx_alice, ForceEndPhase())
+        assert room.state == RoomState.ROOM_STATE_MARKING
+
+        # Both Alice and Bob must have received private MarkingAssignment messages
+        alice_payloads = [m.WhichOneof("payload") for m in ws_alice.sent_messages]
+        bob_payloads = [m.WhichOneof("payload") for m in ws_bob.sent_messages]
+        assert "marking_assignment" in alice_payloads
+        assert "marking_assignment" in bob_payloads
+
+    asyncio.run(run())
+
+
+def test_handle_force_end_exam_guards() -> None:
+    """Non-admin or calling outside EXAM phase is rejected."""
+
+    async def run() -> None:
+        rm = RoomManager()
+        cm = ConnectionManager()
+
+        admin = Player(name="Admin", is_admin=True, is_ready=True)
+        member = Player(name="Bob", is_admin=False, is_ready=True)
+        room = rm.create_room(password="pw", admin_player=admin)
+        room.players.add_player(member)
+
+        ctx_admin, _, _, ws_admin = create_context(rm=rm, cm=cm)
+        ctx_admin.bind_session(admin, room)
+
+        ctx_member, _, _, ws_member = create_context(rm=rm, cm=cm)
+        ctx_member.bind_session(member, room)
+
+        # 1. Cannot end exam while still in LOBBY phase
+        await handle_force_end_exam(ctx_admin, ForceEndPhase())
+        assert ws_admin.sent_messages[-1].error.code == ErrorCode.ERROR_CODE_INVALID_STATE
+
+        # Start exam
+        await handle_upload_exam(ctx_admin, UploadExam(filename="exam.pdf", file_data=b"%PDF..."))
+        await handle_start_exam(ctx_admin, StartExam())
+
+        # 2. Non-admin cannot end exam
+        await handle_force_end_exam(ctx_member, ForceEndPhase())
+        assert ws_member.sent_messages[-1].error.code == ErrorCode.ERROR_CODE_NOT_ADMIN
 
     asyncio.run(run())

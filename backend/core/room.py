@@ -23,7 +23,7 @@ class RoomError(Exception):
     """Base exception for room-related errors."""
 
 
-class RoomPhaseError(RoomError):
+class RoomStateError(RoomError):
     """Raised when an operation is invalid for the current room state."""
 
 
@@ -71,7 +71,7 @@ class Room:
 
         if self.state != RoomState.ROOM_STATE_LOBBY:
             logger.warning(f"Cannot update settings in room {self._code}: room is in {self.state}")
-            raise RoomPhaseError("Room settings can only be updated during the LOBBY phase.")
+            raise RoomStateError("Room settings can only be updated during the LOBBY phase.")
 
         self.settings = settings
 
@@ -80,7 +80,7 @@ class Room:
 
         if self.state != RoomState.ROOM_STATE_LOBBY:
             logger.warning(f"Cannot upload exam in room {self._code}: room is in {self.state}")
-            raise RoomPhaseError("Exam PDF can only be uploaded during the LOBBY phase.")
+            raise RoomStateError("Exam PDF can only be uploaded during the LOBBY phase.")
 
         self._exam_filename = filename
         self._exam_file_bytes = file_bytes
@@ -97,7 +97,7 @@ class Room:
 
         if self.state != RoomState.ROOM_STATE_EXAM:
             logger.warning(f"Cannot save progress in room {self._code}: room is in {self.state}")
-            raise RoomPhaseError("Progress can only be saved during the EXAM phase.")
+            raise RoomStateError("Progress can only be saved during the EXAM phase.")
 
         if player_id not in self._submissions:
             self._submissions[player_id] = {}
@@ -131,7 +131,7 @@ class Room:
 
         if self.state != RoomState.ROOM_STATE_MARKING:
             logger.warning(f"Cannot submit marking in room {self._code}: room is in {self.state}")
-            raise RoomPhaseError("Marking can only be submitted during the MARKING phase.")
+            raise RoomStateError("Marking can only be submitted during the MARKING phase.")
 
         author_id = self._marking_assignments.get(marker_id)
         if author_id is None:
@@ -172,6 +172,13 @@ class Room:
             all_marking_done=self.all_marking_submitted(),
         )
         self._phase_end_time = 0
+
+    def force_next_phase(self) -> RoomState:
+        """Forces the room into the immediate next phase regardless of guards (admin override)."""
+
+        new_state = self._state_machine.force_next_state()
+        self._phase_end_time = 0
+        return new_state
 
     def calculate_results(self) -> list[PlayerResult]:
         """Aggregates all submissions, marks, and feedback into a final results list."""

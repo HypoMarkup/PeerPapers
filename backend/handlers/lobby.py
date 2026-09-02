@@ -1,5 +1,5 @@
 from core.player import Player
-from core.room import RoomPhaseError
+from core.room import RoomStateError
 from generated.v1.messages_pb2 import (
     AuthSuccess,
     CreateRoom,
@@ -134,8 +134,8 @@ async def handle_update_settings(ctx: Context, msg: UpdateSettings) -> None:
 
     try:
         ctx.room.update_settings(msg.settings)
-    except RoomPhaseError:
-        return await ctx.send_error(ErrorCode.ERROR_CODE_INVALID_PHASE, "Settings can only be updated in the lobby.")
+    except RoomStateError:
+        return await ctx.send_error(ErrorCode.ERROR_CODE_INVALID_STATE, "Settings can only be updated in the lobby.")
 
     await ctx.broadcast_room_snapshot()
 
@@ -172,7 +172,7 @@ async def handle_upload_exam(ctx: Context, msg: UploadExam) -> None:
             filename=msg.filename,
             file_bytes=msg.file_data,
         )
-    except RoomPhaseError:
-        return await ctx.send_error(ErrorCode.ERROR_CODE_INVALID_PHASE, "Exam PDF can only be uploaded in the lobby.")
+    except RoomStateError:
+        return await ctx.send_error(ErrorCode.ERROR_CODE_INVALID_STATE, "Exam PDF can only be uploaded in the lobby.")
 
     await ctx.broadcast_room_snapshot()

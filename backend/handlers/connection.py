@@ -1,4 +1,12 @@
-from generated.v1.messages_pb2 import Authenticate, AuthSuccess, ErrorCode, ServerMessage
+from generated.v1.messages_pb2 import (
+    Authenticate,
+    AuthSuccess,
+    ErrorCode,
+    MarkingAssignment,
+    ResultsBroadcast,
+    ServerMessage,
+)
+from generated.v1.models_pb2 import RoomState, Submission
 from transport.context import Context
 from utils.logger import get_logger
 
@@ -15,13 +23,33 @@ async def handle_authenticate(ctx: Context, msg: Authenticate) -> None:
             player.is_connected = True
             ctx.bind_session(player, room)
 
-            auth_success = ServerMessage(
+            await ctx.send(ServerMessage(
                 auth_success=AuthSuccess(
                     session_token=msg.session_token,
-                    player_id=player.id
-                )
-            )
-            await ctx.send(auth_success)
+                    player_id=player.id,
+                ),
+            ))
+
+            # If reconnecting during MARKING, deliver their assigned paper
+            if room.state == RoomState.ROOM_STATE_MARKING:
+                author_id = room.get_assigned_author_id(player.id)
+                if author_id is not None:
+                    submission = room.get_submission(author_id) or Submission(player_id=author_id, sections=[])
+                    author = room.players.get_by_id(author_id)
+                    author_name = author.name if author else "N/A"
+                    await ctx.send(ServerMessage(
+                        marking_assignment=MarkingAssignment(
+                            submission=submission,
+                            author_name=author_name,
+                        ),
+                    ))
+
+            # If reconnecting during RESULTS, deliver the final leaderboard
+            elif room.state == RoomState.ROOM_STATE_RESULTS:
+                results = room.calculate_results()
+                await ctx.send(ServerMessage(
+                    results_broadcast=ResultsBroadcast(results=results),
+                ))
 
             await ctx.broadcast_room_snapshot()
             return
