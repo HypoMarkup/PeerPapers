@@ -1,12 +1,16 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useWebSocket } from "../context/WebSocketContext";
 import { Timer } from "../components/Timer";
-import { FileText, Save, CheckCircle2, AlertTriangle, Plus, Trash2 } from "lucide-react";
+import { Whiteboard } from "../components/Whiteboard";
+import { FileText, Save, CheckCircle2, AlertTriangle, Plus, Trash2, Edit3, Palette } from "lucide-react";
 
 export const ExamView: React.FC = () => {
   const { snapshot, playerId, pdfBlobUrl, requestExamPdf, saveProgress, forceEndPhase } = useWebSocket();
-  const [sections, setSections] = useState<{ [key: number]: string }>({ 0: "" });
+  const [sectionTexts, setSectionTexts] = useState<{ [key: number]: string }>({ 0: "" });
+  const [sectionWhiteboards, setSectionWhiteboards] = useState<{ [key: number]: string }>({ 0: "" });
   const [activeSection, setActiveSection] = useState(0);
+  const [activeTab, setActiveTab] = useState<"text" | "whiteboard">("text");
+
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const debounceTimers = useRef<{ [key: number]: ReturnType<typeof setTimeout> }>({});
@@ -21,8 +25,7 @@ export const ExamView: React.FC = () => {
     }
   }, [pdfBlobUrl, requestExamPdf]);
 
-  const handleTextChange = (sectionIndex: number, text: string) => {
-    setSections((prev) => ({ ...prev, [sectionIndex]: text }));
+  const triggerAutosave = (sectionIndex: number, text: string, wb: string) => {
     setIsSaving(true);
 
     if (debounceTimers.current[sectionIndex]) {
@@ -30,31 +33,47 @@ export const ExamView: React.FC = () => {
     }
 
     debounceTimers.current[sectionIndex] = setTimeout(() => {
-      saveProgress(sectionIndex, text);
+      saveProgress(sectionIndex, text, wb);
       setIsSaving(false);
       setLastSaved(new Date());
     }, 1200);
   };
 
+  const handleTextChange = (sectionIndex: number, text: string) => {
+    setSectionTexts((prev) => ({ ...prev, [sectionIndex]: text }));
+    triggerAutosave(sectionIndex, text, sectionWhiteboards[sectionIndex] || "");
+  };
+
+  const handleWhiteboardChange = (sectionIndex: number, wbJson: string) => {
+    setSectionWhiteboards((prev) => ({ ...prev, [sectionIndex]: wbJson }));
+    triggerAutosave(sectionIndex, sectionTexts[sectionIndex] || "", wbJson);
+  };
+
   const addSection = () => {
-    const nextIdx = Math.max(...Object.keys(sections).map(Number), -1) + 1;
-    setSections((prev) => ({ ...prev, [nextIdx]: "" }));
+    const nextIdx = Math.max(...Object.keys(sectionTexts).map(Number), -1) + 1;
+    setSectionTexts((prev) => ({ ...prev, [nextIdx]: "" }));
+    setSectionWhiteboards((prev) => ({ ...prev, [nextIdx]: "" }));
     setActiveSection(nextIdx);
   };
 
   const removeSection = (idx: number) => {
-    if (Object.keys(sections).length <= 1) return;
-    setSections((prev) => {
+    if (Object.keys(sectionTexts).length <= 1) return;
+    setSectionTexts((prev) => {
       const copy = { ...prev };
       delete copy[idx];
       return copy;
     });
-    const remaining = Object.keys(sections).map(Number).filter((k) => k !== idx);
+    setSectionWhiteboards((prev) => {
+      const copy = { ...prev };
+      delete copy[idx];
+      return copy;
+    });
+    const remaining = Object.keys(sectionTexts).map(Number).filter((k) => k !== idx);
     setActiveSection(remaining[0] ?? 0);
   };
 
   return (
-    <div className="container" style={{ maxWidth: "1400px" }}>
+    <div className="container" style={{ maxWidth: "1500px" }}>
       {/* ─── Top Bar: Exam Title, Timer, and Admin End Phase ─── */}
       <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem 1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -81,7 +100,7 @@ export const ExamView: React.FC = () => {
         </div>
       </div>
 
-      {/* ─── Split Screen: PDF on Left, Answer Workspace on Right ─── */}
+      {/* ─── Split Screen: PDF on Left, Multi-Section Workspace on Right ─── */}
       <div className="split-view">
         {/* Left Pane: PDF Viewer */}
         <div className="card" style={{ padding: "0.5rem", overflow: "hidden", display: "flex", flexDirection: "column" }}>
@@ -90,7 +109,7 @@ export const ExamView: React.FC = () => {
             <strong style={{ fontSize: "0.95rem" }}>Exam Questions</strong>
           </div>
 
-          <div style={{ flex: 1, height: "100%", minHeight: "500px", background: "#525659" }}>
+          <div style={{ flex: 1, height: "100%", minHeight: "550px", background: "#525659" }}>
             {pdfBlobUrl ? (
               <iframe src={pdfBlobUrl} title="Exam Paper" style={{ width: "100%", height: "100%", border: "none" }} />
             ) : (
@@ -101,50 +120,96 @@ export const ExamView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Pane: Student Answer Editor */}
+        {/* Right Pane: Student Answer Workspace */}
         <div className="card" style={{ display: "flex", flexDirection: "column" }}>
-          {/* Section Tabs */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "1rem", overflowX: "auto" }}>
-            {Object.keys(sections).map((key) => {
-              const idx = Number(key);
-              const isActive = idx === activeSection;
-              return (
-                <div key={idx} style={{ display: "flex", alignItems: "center" }}>
-                  <button
-                    className={`btn ${isActive ? "btn-primary" : "btn-secondary"}`}
-                    style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem" }}
-                    onClick={() => setActiveSection(idx)}
-                  >
-                    Section {idx + 1}
-                  </button>
-                  {Object.keys(sections).length > 1 && (
+          {/* Top Section Tabs */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", overflowX: "auto" }}>
+              {Object.keys(sectionTexts).map((key) => {
+                const idx = Number(key);
+                const isActive = idx === activeSection;
+                return (
+                  <div key={idx} style={{ display: "flex", alignItems: "center" }}>
                     <button
-                      onClick={() => removeSection(idx)}
-                      style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", marginLeft: "-0.5rem", padding: "0.2rem" }}
-                      title="Delete Section"
+                      className={`btn ${isActive ? "btn-primary" : "btn-secondary"}`}
+                      style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem" }}
+                      onClick={() => setActiveSection(idx)}
                     >
-                      <Trash2 size={12} />
+                      Section {idx + 1}
                     </button>
-                  )}
-                </div>
-              );
-            })}
+                    {Object.keys(sectionTexts).length > 1 && (
+                      <button
+                        onClick={() => removeSection(idx)}
+                        style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", marginLeft: "-0.5rem", padding: "0.2rem" }}
+                        title="Delete Section"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
 
-            <button className="btn btn-secondary" style={{ padding: "0.4rem 0.6rem" }} onClick={addSection} title="Add Section">
-              <Plus size={14} />
-            </button>
+              <button className="btn btn-secondary" style={{ padding: "0.4rem 0.6rem" }} onClick={addSection} title="Add Section">
+                <Plus size={14} />
+              </button>
+            </div>
+
+            {/* Sub-tab Switcher: Text vs Whiteboard */}
+            <div style={{ display: "flex", background: "#f1f5f9", padding: "0.2rem", borderRadius: "var(--radius)" }}>
+              <button
+                className="btn"
+                style={{
+                  padding: "0.3rem 0.75rem",
+                  fontSize: "0.8rem",
+                  background: activeTab === "text" ? "#ffffff" : "transparent",
+                  color: activeTab === "text" ? "var(--primary)" : "var(--text-secondary)",
+                  boxShadow: activeTab === "text" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                }}
+                onClick={() => setActiveTab("text")}
+              >
+                <Edit3 size={13} /> Text Answer
+              </button>
+              <button
+                className="btn"
+                style={{
+                  padding: "0.3rem 0.75rem",
+                  fontSize: "0.8rem",
+                  background: activeTab === "whiteboard" ? "#ffffff" : "transparent",
+                  color: activeTab === "whiteboard" ? "var(--primary)" : "var(--text-secondary)",
+                  boxShadow: activeTab === "whiteboard" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                }}
+                onClick={() => setActiveTab("whiteboard")}
+              >
+                <Palette size={13} /> Whiteboard Diagram
+              </button>
+            </div>
           </div>
 
           {/* Section Content Area */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            <label className="form-label">Answer for Section {activeSection + 1}:</label>
-            <textarea
-              className="form-textarea"
-              style={{ flex: 1, minHeight: "380px" }}
-              placeholder="Type your answer, working, and explanations here (automatically saved)..."
-              value={sections[activeSection] || ""}
-              onChange={(e) => handleTextChange(activeSection, e.target.value)}
-            />
+            {activeTab === "text" ? (
+              <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                <label className="form-label">Written Answer for Section {activeSection + 1}:</label>
+                <textarea
+                  className="form-textarea"
+                  style={{ flex: 1, minHeight: "450px" }}
+                  placeholder="Type your answer, working, formulas, and explanations here (autosaved)..."
+                  value={sectionTexts[activeSection] || ""}
+                  onChange={(e) => handleTextChange(activeSection, e.target.value)}
+                />
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                <label className="form-label">Excalidraw Whiteboard for Section {activeSection + 1}:</label>
+                <Whiteboard
+                  key={`wb-${activeSection}`}
+                  initialData={sectionWhiteboards[activeSection]}
+                  onChange={(data) => handleWhiteboardChange(activeSection, data)}
+                  height="450px"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

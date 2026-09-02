@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useWebSocket } from "../context/WebSocketContext";
 import { Timer } from "../components/Timer";
+import { Whiteboard } from "../components/Whiteboard";
 import { SubmissionSection } from "../generated/v1/models_pb";
 import { CheckSquare, AlertTriangle, Send, UserCheck, Clock } from "lucide-react";
 
@@ -70,7 +71,7 @@ export const MarkingView: React.FC = () => {
   }
 
   return (
-    <div className="container" style={{ maxWidth: "1400px" }}>
+    <div className="container" style={{ maxWidth: "1500px" }}>
       {/* ─── Top Bar ─── */}
       <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem 1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
@@ -101,22 +102,37 @@ export const MarkingView: React.FC = () => {
 
           {sections.length > 0 ? (
             sections.map((sec) => (
-              <div key={sec.sectionIndex} style={{ marginBottom: "1.5rem" }}>
-                <h4 style={{ fontSize: "0.95rem", color: "var(--primary)", marginBottom: "0.5rem" }}>
+              <div key={sec.sectionIndex} style={{ marginBottom: "2rem", paddingBottom: "1.5rem", borderBottom: "1px solid var(--border)" }}>
+                <h4 style={{ fontSize: "0.95rem", color: "var(--primary)", marginBottom: "0.75rem" }}>
                   Section {sec.sectionIndex + 1}
                 </h4>
-                <div
-                  style={{
-                    background: "var(--bg-primary)",
-                    padding: "1rem",
-                    borderRadius: "var(--radius)",
-                    border: "1px solid var(--border)",
-                    whiteSpace: "pre-wrap",
-                    minHeight: "100px",
-                  }}
-                >
-                  {sec.textData || <em style={{ color: "var(--text-secondary)" }}>No text answer provided.</em>}
+
+                <div style={{ marginBottom: "1rem" }}>
+                  <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                    Written Text:
+                  </label>
+                  <div
+                    style={{
+                      background: "var(--bg-primary)",
+                      padding: "0.85rem 1rem",
+                      borderRadius: "var(--radius)",
+                      border: "1px solid var(--border)",
+                      whiteSpace: "pre-wrap",
+                      minHeight: "80px",
+                    }}
+                  >
+                    {sec.textData || <em style={{ color: "var(--text-secondary)" }}>No text answer provided.</em>}
+                  </div>
                 </div>
+
+                {sec.whiteboardData && (
+                  <div>
+                    <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                      🎨 Whiteboard Diagram:
+                    </label>
+                    <Whiteboard key={`marking-wb-${sec.sectionIndex}`} initialData={sec.whiteboardData} viewModeEnabled={true} height="350px" />
+                  </div>
+                )}
               </div>
             ))
           ) : (

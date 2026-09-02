@@ -46,9 +46,9 @@ interface WebSocketContextType {
   setReady: (isReady: boolean) => void;
   uploadExam: (filename: string, fileBytes: Uint8Array) => void;
   startExam: () => void;
-  saveProgress: (sectionIndex: number, textData: string) => void;
+  saveProgress: (sectionIndex: number, textData: string, whiteboardData?: string) => void;
   requestExamPdf: () => void;
-  submitMarking: (sections: { sectionIndex: number; score: number; maxScore: number; textComments: string }[]) => void;
+  submitMarking: (sections: { sectionIndex: number; score: number; maxScore: number; textComments: string; whiteboardAnnotations?: string }[]) => void;
   forceEndPhase: () => void;
 }
 
@@ -271,7 +271,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     send(msg);
   }, [send]);
 
-  const saveProgress = useCallback((sectionIndex: number, textData: string) => {
+  const saveProgress = useCallback((sectionIndex: number, textData: string, whiteboardData: string = "") => {
     const msg = create(ClientMessageSchema, {
       payload: {
         case: "saveProgress",
@@ -279,6 +279,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           section: create(SubmissionSectionSchema, {
             sectionIndex,
             textData,
+            whiteboardData,
           }),
         }),
       },
@@ -296,28 +297,32 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     send(msg);
   }, [send]);
 
-  const submitMarking = useCallback((sections: { sectionIndex: number; score: number; maxScore: number; textComments: string }[]) => {
-    const feedbackList = sections.map((s) =>
-      create(SectionFeedbackSchema, {
-        sectionIndex: s.sectionIndex,
-        score: s.score,
-        maxScore: s.maxScore,
-        textComments: s.textComments,
-      })
-    );
+  const submitMarking = useCallback(
+    (sections: { sectionIndex: number; score: number; maxScore: number; textComments: string; whiteboardAnnotations?: string }[]) => {
+      const feedbackList = sections.map((s) =>
+        create(SectionFeedbackSchema, {
+          sectionIndex: s.sectionIndex,
+          score: s.score,
+          maxScore: s.maxScore,
+          textComments: s.textComments,
+          whiteboardAnnotations: s.whiteboardAnnotations || "",
+        })
+      );
 
-    const msg = create(ClientMessageSchema, {
-      payload: {
-        case: "submitMarking",
-        value: create(SubmitMarkingSchema, {
-          result: create(MarkingResultSchema, {
-            sections: feedbackList,
+      const msg = create(ClientMessageSchema, {
+        payload: {
+          case: "submitMarking",
+          value: create(SubmitMarkingSchema, {
+            result: create(MarkingResultSchema, {
+              sections: feedbackList,
+            }),
           }),
-        }),
-      },
-    });
-    send(msg);
-  }, [send]);
+        },
+      });
+      send(msg);
+    },
+    [send]
+  );
 
   const forceEndPhase = useCallback(() => {
     const msg = create(ClientMessageSchema, {
