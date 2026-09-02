@@ -13,6 +13,14 @@ class GuardConditionFailedError(StateMachineError):
     """Raised when transition guards (e.g. not all players ready) are not met."""
 
 
+class PlayersNotReadyError(GuardConditionFailedError):
+    """Raised when not all players are marked ready before exam start."""
+
+
+class ExamNotUploadedError(GuardConditionFailedError):
+    """Raised when an exam PDF has not been uploaded before exam start."""
+
+
 class RoomStateMachine:
     """Manages state transitions for a Room."""
 
@@ -42,9 +50,9 @@ class RoomStateMachine:
         if not self.can_transition_to(RoomState.ROOM_STATE_EXAM):
             raise IllegalStateTransitionError(f"Cannot transition from {self.state} to {RoomState.ROOM_STATE_EXAM}.")
         if not all_players_ready:
-            raise GuardConditionFailedError("All players must be ready before the exam can start.")
+            raise PlayersNotReadyError("All players must be ready before the exam can start.")
         if not exam_uploaded:
-            raise GuardConditionFailedError("You must upload an exam PDF before the exam can start.")
+            raise ExamNotUploadedError("You must upload an exam PDF before the exam can start.")
         if duration_mins <= 0:
             raise GuardConditionFailedError("Exam duration must be greater than 0 minutes.")
 
