@@ -9,7 +9,7 @@ from services.room_manager import RoomManager
 from transport.connection_manager import ConnectionManager
 from transport.context import Context
 from transport.dispatcher import dispatch_message
-from utils.constants import DEFAULT_HOST, DEFAULT_PORT
+from utils.constants import DEFAULT_HOST, DEFAULT_PORT, MAX_MESSAGE_SIZE_BYTES
 from utils.logger import get_logger
 
 logger = get_logger("main")
@@ -57,7 +57,7 @@ class PeerPapersServer:
 
         logger.info(f"Starting PeerPapers server on ws://{self.host}:{self.port}...")
 
-        async with websockets.serve(self.ws_handler, self.host, self.port):
+        async with websockets.serve(self.ws_handler, self.host, self.port, max_size=MAX_MESSAGE_SIZE_BYTES):
             logger.info(f"PeerPapers server running and accepting connections on port {self.port}")
             await self._stop_event.wait()
 
