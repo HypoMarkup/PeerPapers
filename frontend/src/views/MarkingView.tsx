@@ -15,9 +15,9 @@ export const MarkingView: React.FC = () => {
   const sections: SubmissionSection[] = assignedPaper?.submission?.sections ?? [];
   const items: { sectionIndex: number }[] = sections.length > 0 ? sections : [{ sectionIndex: 0 }];
 
-  // Form State for per-section scores and comments
+  // Form State for per-question scores, max scores, and feedback
   const [grades, setGrades] = useState<{ [key: number]: { score: number; maxScore: number; textComments: string } }>({
-    0: { score: 100, maxScore: 100, textComments: "" },
+    0: { score: 10, maxScore: 10, textComments: "" },
   });
 
   const handleScoreChange = (idx: number, score: number) => {
@@ -25,7 +25,18 @@ export const MarkingView: React.FC = () => {
       ...prev,
       [idx]: {
         score,
-        maxScore: prev[idx]?.maxScore || 100,
+        maxScore: prev[idx]?.maxScore ?? 10,
+        textComments: prev[idx]?.textComments || "",
+      },
+    }));
+  };
+
+  const handleMaxScoreChange = (idx: number, maxScore: number) => {
+    setGrades((prev) => ({
+      ...prev,
+      [idx]: {
+        score: prev[idx]?.score ?? 0,
+        maxScore,
         textComments: prev[idx]?.textComments || "",
       },
     }));
@@ -35,8 +46,8 @@ export const MarkingView: React.FC = () => {
     setGrades((prev) => ({
       ...prev,
       [idx]: {
-        score: prev[idx]?.score ?? 100,
-        maxScore: prev[idx]?.maxScore || 100,
+        score: prev[idx]?.score ?? 0,
+        maxScore: prev[idx]?.maxScore ?? 10,
         textComments,
       },
     }));
@@ -47,8 +58,8 @@ export const MarkingView: React.FC = () => {
 
     const resultList = items.map((s) => ({
       sectionIndex: s.sectionIndex,
-      score: grades[s.sectionIndex]?.score ?? 100,
-      maxScore: grades[s.sectionIndex]?.maxScore ?? 100,
+      score: grades[s.sectionIndex]?.score ?? 0,
+      maxScore: Math.max(1, grades[s.sectionIndex]?.maxScore ?? 10),
       textComments: grades[s.sectionIndex]?.textComments ?? "",
     }));
 
@@ -104,7 +115,7 @@ export const MarkingView: React.FC = () => {
             sections.map((sec) => (
               <div key={sec.sectionIndex} style={{ marginBottom: "2rem", paddingBottom: "1.5rem", borderBottom: "1px solid var(--border)" }}>
                 <h4 style={{ fontSize: "0.95rem", color: "var(--primary)", marginBottom: "0.75rem" }}>
-                  Section {sec.sectionIndex + 1}
+                  Question {sec.sectionIndex + 1}
                 </h4>
 
                 <div style={{ marginBottom: "1rem" }}>
@@ -159,23 +170,42 @@ export const MarkingView: React.FC = () => {
               <div style={{ flex: 1, overflowY: "auto" }}>
                 {items.map((sec) => {
                   const idx = sec.sectionIndex;
+                  const currentScore = grades[idx]?.score ?? 0;
+                  const currentMaxScore = grades[idx]?.maxScore ?? 10;
+
                   return (
                     <div key={idx} style={{ marginBottom: "1.5rem", padding: "1rem", background: "var(--bg-primary)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
-                      <h4 style={{ fontSize: "0.95rem", marginBottom: "0.75rem" }}>
-                        Section {idx + 1} Evaluation
+                      <h4 style={{ fontSize: "0.95rem", marginBottom: "0.75rem", color: "var(--primary)" }}>
+                        Question {idx + 1} Evaluation
                       </h4>
 
-                      <div className="form-group">
-                        <label className="form-label">Score (out of 100):</label>
-                        <input
-                          className="form-input"
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={grades[idx]?.score ?? 100}
-                          onChange={(e) => handleScoreChange(idx, Number(e.target.value))}
-                          required
-                        />
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">Marks Awarded:</label>
+                          <input
+                            className="form-input"
+                            type="number"
+                            min={0}
+                            max={currentMaxScore}
+                            step="any"
+                            value={currentScore}
+                            onChange={(e) => handleScoreChange(idx, Number(e.target.value))}
+                            required
+                          />
+                        </div>
+
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">Out of (Max Marks):</label>
+                          <input
+                            className="form-input"
+                            type="number"
+                            min={1}
+                            step="any"
+                            value={currentMaxScore}
+                            onChange={(e) => handleMaxScoreChange(idx, Number(e.target.value))}
+                            required
+                          />
+                        </div>
                       </div>
 
                       <div className="form-group" style={{ marginBottom: 0 }}>

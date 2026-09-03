@@ -135,13 +135,13 @@ export const ExamView: React.FC = () => {
                       style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem" }}
                       onClick={() => setActiveSection(idx)}
                     >
-                      Section {idx + 1}
+                      Question {idx + 1}
                     </button>
                     {Object.keys(sectionTexts).length > 1 && (
                       <button
                         onClick={() => removeSection(idx)}
                         style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", marginLeft: "-0.5rem", padding: "0.2rem" }}
-                        title="Delete Section"
+                        title="Delete Question"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -150,7 +150,7 @@ export const ExamView: React.FC = () => {
                 );
               })}
 
-              <button className="btn btn-secondary" style={{ padding: "0.4rem 0.6rem" }} onClick={addSection} title="Add Section">
+              <button className="btn btn-secondary" style={{ padding: "0.4rem 0.6rem" }} onClick={addSection} title="Add Question">
                 <Plus size={14} />
               </button>
             </div>
@@ -190,7 +190,7 @@ export const ExamView: React.FC = () => {
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             {activeTab === "text" ? (
               <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                <label className="form-label">Written Answer for Section {activeSection + 1}:</label>
+                <label className="form-label">Written Answer for Question {activeSection + 1}:</label>
                 <textarea
                   className="form-textarea"
                   style={{ flex: 1, minHeight: "450px" }}
@@ -201,7 +201,7 @@ export const ExamView: React.FC = () => {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                <label className="form-label">Excalidraw Whiteboard for Section {activeSection + 1}:</label>
+                <label className="form-label">Excalidraw Whiteboard for Question {activeSection + 1}:</label>
                 <Whiteboard
                   key={`wb-${activeSection}`}
                   initialData={sectionWhiteboards[activeSection]}

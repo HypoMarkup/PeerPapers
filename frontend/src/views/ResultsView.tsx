@@ -115,7 +115,7 @@ export const ResultsView: React.FC = () => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                  <h4 style={{ fontSize: "0.95rem", color: "var(--primary)" }}>Section {sec.sectionIndex + 1}</h4>
+                  <h4 style={{ fontSize: "0.95rem", color: "var(--primary)" }}>Question {sec.sectionIndex + 1}</h4>
                   <span className="badge badge-ready">
                     <CheckCircle size={13} /> {sec.score} / {sec.maxScore}
                   </span>
