@@ -26,6 +26,7 @@ import {
   SectionFeedbackSchema,
   SubmissionSectionSchema,
 } from "../generated/v1/models_pb";
+import { DEFAULT_HOST, DEFAULT_PORT, TOKEN_STORAGE_KEY } from "../utils/constants";
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -54,12 +55,12 @@ interface WebSocketContextType {
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
-const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8765";
+const WS_URL = import.meta.env.VITE_WS_URL || `ws://${DEFAULT_HOST}:${DEFAULT_PORT}`;
 
 export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [sessionToken, setSessionToken] = useState<string | null>(() => localStorage.getItem("peerpapers_token"));
+  const [sessionToken, setSessionToken] = useState<string | null>(() => localStorage.getItem(TOKEN_STORAGE_KEY));
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
@@ -93,7 +94,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setErrorMessage(null); // Clear any connection errors on success
 
       // Auto-reconnect if session token exists
-      const savedToken = localStorage.getItem("peerpapers_token");
+      const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
       if (savedToken) {
         const authMsg = create(ClientMessageSchema, {
           payload: {
@@ -127,7 +128,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const pid = serverMsg.payload.value.playerId;
             setSessionToken(token);
             setPlayerId(pid);
-            localStorage.setItem("peerpapers_token", token);
+            localStorage.setItem(TOKEN_STORAGE_KEY, token);
             break;
           }
 
@@ -217,7 +218,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       },
     });
     send(msg);
-    localStorage.removeItem("peerpapers_token");
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
     setSessionToken(null);
     setPlayerId(null);
     setRoomCode(null);

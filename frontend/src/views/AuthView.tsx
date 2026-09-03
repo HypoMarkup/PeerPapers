@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useWebSocket } from "../context/WebSocketContext";
 import { PlusCircle, LogIn } from "lucide-react";
+import { CODE_LENGTH, DEFAULT_EXAM_DURATION_MINS, MIN_EXAM_DURATION_MINS } from "../utils/constants";
 
 export const AuthView: React.FC = () => {
   const { createRoom, joinRoom } = useWebSocket();
@@ -9,7 +10,7 @@ export const AuthView: React.FC = () => {
   // Create Form State
   const [createName, setCreateName] = useState("");
   const [createPassword, setCreatePassword] = useState("");
-  const [durationMins, setDurationMins] = useState(15);
+  const [durationMins, setDurationMins] = useState(DEFAULT_EXAM_DURATION_MINS);
 
   // Join Form State
   const [joinCode, setJoinCode] = useState("");
@@ -79,8 +80,7 @@ export const AuthView: React.FC = () => {
               <input
                 className="form-input"
                 type="number"
-                min={1}
-                max={180}
+                min={MIN_EXAM_DURATION_MINS}
                 value={durationMins}
                 onChange={(e) => setDurationMins(Number(e.target.value))}
                 required
@@ -94,11 +94,11 @@ export const AuthView: React.FC = () => {
         ) : (
           <form onSubmit={handleJoin}>
             <div className="form-group">
-              <label className="form-label">6-Character Room Code</label>
+              <label className="form-label">{CODE_LENGTH}-Character Room Code</label>
               <input
                 className="form-input"
                 type="text"
-                maxLength={6}
+                maxLength={CODE_LENGTH}
                 placeholder="e.g. WQPWPF"
                 style={{ textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}
                 value={joinCode}

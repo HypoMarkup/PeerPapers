@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useWebSocket } from "../context/WebSocketContext";
 import { Copy, Check, Upload, Play, CheckCircle2, XCircle, FileText, Settings, User } from "lucide-react";
+import { DEFAULT_EXAM_DURATION_MINS, MIN_EXAM_DURATION_MINS } from "../utils/constants";
 
 export const LobbyView: React.FC = () => {
   const { snapshot, playerId, setReady, uploadExam, updateSettings, startExam } = useWebSocket();
   const [copied, setCopied] = useState(false);
-  const [newDuration, setNewDuration] = useState(snapshot?.settings?.examDurationMins || 15);
+  const [newDuration, setNewDuration] = useState(snapshot?.settings?.examDurationMins || DEFAULT_EXAM_DURATION_MINS);
 
   if (!snapshot) return null;
 
@@ -160,8 +161,7 @@ export const LobbyView: React.FC = () => {
                     <input
                       className="form-input"
                       type="number"
-                      min={1}
-                      max={180}
+                      min={MIN_EXAM_DURATION_MINS}
                       value={newDuration}
                       onChange={(e) => setNewDuration(Number(e.target.value))}
                     />
