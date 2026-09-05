@@ -5,11 +5,12 @@ import { Whiteboard } from "../components/Whiteboard";
 import { FileText, Save, CheckCircle2, AlertTriangle, Plus, Trash2, Edit3, Palette } from "lucide-react";
 
 export const ExamView: React.FC = () => {
-  const { snapshot, playerId, pdfBlobUrl, requestExamPdf, saveProgress, forceEndPhase } = useWebSocket();
+  const { snapshot, playerId, pdfBlobUrl, requestExamPdf, saveProgress, forceEndPhase, restoredSubmission } = useWebSocket();
   const [sectionTexts, setSectionTexts] = useState<{ [key: number]: string }>({ 0: "" });
   const [sectionWhiteboards, setSectionWhiteboards] = useState<{ [key: number]: string }>({ 0: "" });
   const [activeSection, setActiveSection] = useState(0);
   const [activeTab, setActiveTab] = useState<"text" | "whiteboard">("text");
+  const [restoreCount, setRestoreCount] = useState(0);
 
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -17,6 +18,21 @@ export const ExamView: React.FC = () => {
 
   const currentPlayer = snapshot?.players.find((p) => p.id === playerId);
   const isAdmin = currentPlayer?.isAdmin ?? false;
+
+  // Restore saved work upon reconnection
+  useEffect(() => {
+    if (restoredSubmission && restoredSubmission.sections.length > 0) {
+      const texts: { [key: number]: string } = {};
+      const wbs: { [key: number]: string } = {};
+      restoredSubmission.sections.forEach((sec) => {
+        texts[sec.sectionIndex] = sec.textData;
+        wbs[sec.sectionIndex] = sec.whiteboardData;
+      });
+      setSectionTexts(texts);
+      setSectionWhiteboards(wbs);
+      setRestoreCount((c) => c + 1);
+    }
+  }, [restoredSubmission]);
 
   // Request PDF on mount if not yet received
   useEffect(() => {
@@ -203,7 +219,7 @@ export const ExamView: React.FC = () => {
               <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
                 <label className="form-label">Excalidraw Whiteboard for Question {activeSection + 1}:</label>
                 <Whiteboard
-                  key={`wb-${activeSection}`}
+                  key={`wb-${activeSection}-${restoreCount}`}
                   initialData={sectionWhiteboards[activeSection]}
                   onChange={(data) => handleWhiteboardChange(activeSection, data)}
                   height="450px"

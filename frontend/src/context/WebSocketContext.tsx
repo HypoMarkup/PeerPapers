@@ -24,6 +24,7 @@ import {
   RoomSettingsSchema,
   RoomSnapshot,
   SectionFeedbackSchema,
+  Submission,
   SubmissionSectionSchema,
 } from "../generated/v1/models_pb";
 import { DEFAULT_HOST, DEFAULT_PORT, TOKEN_STORAGE_KEY } from "../utils/constants";
@@ -38,6 +39,7 @@ interface WebSocketContextType {
   pdfFilename: string | null;
   assignedPaper: MarkingAssignment | null;
   results: PlayerResult[];
+  restoredSubmission: Submission | null;
   errorMessage: string | null;
   clearError: () => void;
   createRoom: (playerName: string, password: string, durationMins: number) => void;
@@ -68,6 +70,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [pdfFilename, setPdfFilename] = useState<string | null>(null);
   const [assignedPaper, setAssignedPaper] = useState<MarkingAssignment | null>(null);
   const [results, setResults] = useState<PlayerResult[]>([]);
+  const [restoredSubmission, setRestoredSubmission] = useState<Submission | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const clearError = useCallback(() => setErrorMessage(null), []);
@@ -165,6 +168,13 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             break;
           }
 
+          case "returnProgress": {
+            if (serverMsg.payload.value.submission) {
+              setRestoredSubmission(serverMsg.payload.value.submission);
+            }
+            break;
+          }
+
           case "error": {
             setErrorMessage(serverMsg.payload.value.message);
             break;
@@ -225,6 +235,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setSnapshot(null);
     setAssignedPaper(null);
     setResults([]);
+    setRestoredSubmission(null);
   }, [send]);
 
   const updateSettings = useCallback((durationMins: number) => {
@@ -347,6 +358,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         pdfFilename,
         assignedPaper,
         results,
+        restoredSubmission,
         errorMessage,
         clearError,
         createRoom,
