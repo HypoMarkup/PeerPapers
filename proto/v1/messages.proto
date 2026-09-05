@@ -87,6 +87,10 @@ message RoomStateUpdate {
   RoomSnapshot room = 1;
 }
 
+message ReturnProgress {
+  Submission submission = 1;
+}
+
 message MarkingAssignment {
   Submission submission = 1; // The work you need to mark
   string author_name = 2;
@@ -139,5 +143,6 @@ message ServerMessage {
     ResultsBroadcast results_broadcast = 5;
     ErrorMessage error = 6;
     ExamPdfContent exam_pdf_content = 7;
+    ReturnProgress return_progress = 8;
   }
 }

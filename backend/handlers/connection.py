@@ -4,6 +4,7 @@ from generated.v1.messages_pb2 import (
     ErrorCode,
     MarkingAssignment,
     ResultsBroadcast,
+    ReturnProgress,
     ServerMessage,
 )
 from generated.v1.models_pb2 import RoomState, Submission
@@ -30,8 +31,18 @@ async def handle_authenticate(ctx: Context, msg: Authenticate) -> None:
                 ),
             ))
 
+            # If reconnecting during EXAM, send the user's work so far back to them
+            if room.state == RoomState.ROOM_STATE_EXAM:
+                submission = room.get_submission(player.id)
+                if submission is not None:
+                    await ctx.send(ServerMessage(
+                        return_progress=ReturnProgress(
+                            submission=submission
+                        )
+                    ))
+
             # If reconnecting during MARKING, deliver their assigned paper
-            if room.state == RoomState.ROOM_STATE_MARKING:
+            elif room.state == RoomState.ROOM_STATE_MARKING:
                 author_id = room.get_assigned_author_id(player.id)
                 if author_id is not None:
                     submission = room.get_submission(author_id) or Submission(player_id=author_id, sections=[])
