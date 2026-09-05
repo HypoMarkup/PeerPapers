@@ -74,6 +74,58 @@ def test_handle_authenticate_success() -> None:
     asyncio.run(run())
 
 
+def test_handle_authenticate_during_exam_phase_delivers_progress() -> None:
+    """Reconnecting during the EXAM phase delivers the player's saved progress."""
+
+    async def run() -> None:
+        rm = RoomManager()
+        cm = ConnectionManager()
+
+        alice = Player(name="Alice", is_admin=True, is_ready=True)
+        room = rm.create_room(password="pw", admin_player=alice)
+
+        ctx_alice, _, _, _ = create_context(rm=rm, cm=cm)
+        ctx_alice.bind_session(alice, room)
+
+        await handle_upload_exam(ctx_alice, UploadExam(filename="exam.pdf", file_data=b"%PDF..."))
+        await handle_start_exam(ctx_alice, StartExam())
+
+        from generated.v1.messages_pb2 import SaveProgress
+
+        await handle_save_progress(
+            ctx_alice,
+            SaveProgress(
+                section=SubmissionSection(
+                    section_index=0,
+                    text_data="Alice answer",
+                    whiteboard_data='{"elements":[]}',
+                )
+            ),
+        )
+
+        # Disconnect Alice
+        await handle_disconnect(ctx_alice)
+        assert alice.is_connected is False
+
+        # Alice reconnects with a fresh socket
+        ctx_reconnect, _, _, ws_reconnect = create_context(rm=rm, cm=cm)
+        await handle_authenticate(ctx_reconnect, Authenticate(session_token=alice.session_token))
+
+        assert ctx_reconnect.is_authenticated is True
+        assert alice.is_connected is True
+
+        payload_types = [m.WhichOneof("payload") for m in ws_reconnect.sent_messages]
+        assert "auth_success" in payload_types
+        assert "return_progress" in payload_types
+
+        return_msg = next(m for m in ws_reconnect.sent_messages if m.WhichOneof("payload") == "return_progress")
+        assert len(return_msg.return_progress.submission.sections) == 1
+        assert return_msg.return_progress.submission.sections[0].text_data == "Alice answer"
+        assert return_msg.return_progress.submission.sections[0].whiteboard_data == '{"elements":[]}'
+
+    asyncio.run(run())
+
+
 def test_handle_authenticate_during_marking_phase_delivers_assignment() -> None:
     """Reconnecting during the MARKING phase delivers the player's assigned paper."""
 
